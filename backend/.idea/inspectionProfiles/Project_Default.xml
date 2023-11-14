@@ -1,0 +1,16 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="list.popleft" />
+          <option value="list.appendleft" />
+          <option value="tuple.append" />
+          <option value="tuple.popleft" />
+          <option value="project.player" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
