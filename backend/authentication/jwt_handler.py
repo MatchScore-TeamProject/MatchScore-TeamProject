@@ -1,7 +1,8 @@
 import time
 import jwt
+import secrets
 
-JWT_SECRET = "secret"# generate new jwtsecret
+JWT_SECRET = secrets.token_urlsafe(32)
 JWT_ALGORITHM = "HS256"
 
 
