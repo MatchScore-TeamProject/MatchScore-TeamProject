@@ -1,84 +1,148 @@
-from fastapi import APIRouter, Depends , Request, HTTPException
-from authentication.jwt_bearer import JwtBearer
-from services.utilities import email_exists, id_exists
-from services.user_service import check_user
-from models.user import User, LoginData, CreateUserModel
-from services import user_service
-from authentication.jwt_handler import signJWT
+from fastapi import APIRouter, Header, HTTPException
+from authentication.auth import find_by_id, get_user_or_raise_401, create_token
+from models.user import User, LoginData
+from services import user_service, utilities
+
+users_router = APIRouter(prefix='/users', tags=['Users'])
 
 
-user_router = APIRouter(prefix='/users', tags=['Users'])
+@users_router.post('/register')
+def register(data: LoginData):
+    ''' Used for registering new users.
+
+    Args:
+        - LoginData(username, password(str))
+
+    Returns:
+        - Registered user as customer
+    '''
+
+    user = user_service.create(data.email, data.password)
+
+    return user or HTTPException(status_code=400, detail=f'Email {data.email} is already taken.')
 
 
-@user_router.get('/')
-def get_all_users():
-    result = user_service.all_users()
-    if result is None:
-        raise HTTPException(status_code=404, detail="No users yet.")
-    return result
+@users_router.post('/login')
+def login(data: LoginData):
+    ''' Used for logging in.
 
+    Args:
+        - LoginData(email, password(str))
 
-@user_router.get('/{id}')
-def get_user_by_id(id: int):
-    user = user_service.get_by_id(id)
-    if user is None:
-        raise HTTPException(status_code=404, detail="No user with ID:{id}")
-    return user
-
-
-@user_router.post('/register')
-def register(user: CreateUserModel):
-    if email_exists(user.email, 'users'):
-        raise HTTPException(status_code=400, detail=f'User with email: {user.email} already exists.')
-    created_user = user_service.create(user)
-
-    return signJWT(created_user.email)
-
-
-# @user_router.post('/register/admin')
-# def register_admin(user: CreateUserModel):
-#     if email_exists(user.email, 'users'):
-#         raise HTTPException(status_code=400, detail=f'Admin with email: {user.email} already exists.')
-#     created_user = user_service.create(user, True)
-
-#     return signJWT(created_user.email)
-
-
-@user_router.post('/login')
-def login(user: LoginData):
-    if not email_exists(user.email, 'users'):
-        return {
-            "error": "You are not registered"
-        }
-    if check_user(user):
-        return signJWT(user.email)
+    Returns:
+        - JWT token
+    '''
+    user = user_service.try_login(data.email, data.password)
+    if user:
+        token = create_token(user)
+        return {'token': token}
     else:
-        return {"error": "Invalid email or password"}
+        raise HTTPException(status_code=400, detail='Invalid login data.')
 
 
+@users_router.get('/')
+def all_users(x_token: str = Header(default=None)):
+    ''' Used for admins to see a list with all users.
 
-@user_router.put('/{id}', dependencies=[Depends(JwtBearer())])
-def edit_user(id: int, user: User, request:Request):
-    check_token(request)
-    existing_user = user_service.get_by_id(id)
-    if existing_user is None:
-        return HTTPException(status_code=404, detail="User Not Found")
-    return user_service.update(existing_user, user)
+    Args:
+        - JWT token
+
+    Returns:
+        - list of users(id, username, role)
+    '''
+
+    if x_token == None:
+        raise HTTPException(status_code=401, detail='You must be logged in to view a list with users.')
+
+    user = get_user_or_raise_401(x_token)
+
+    if not user_service.is_admin(user):
+        raise HTTPException(status_code=401, detail='Only admins can view a list with all users.')
+
+    return user_service.all_users()
 
 
-@user_router.delete('/{id}', dependencies=[Depends(JwtBearer())])
-def delete_user(id:int, request: Request):
-    if not id_exists(id, 'users'):
-        raise HTTPException(status_code=404, detail=f'User with id: {id} does not exist.')
-    if not user_service.is_admin(check_token(request)):
-        raise HTTPException(status_code=403, detail='Only admins can remove users.')
-    user_service.delete(id)
+@users_router.get('/{id}')
+def user_info(id: int, x_token: str = Header(default=None)):
+    ''' Used for admins to see data information about a user.
 
-    return f"User with id {id} deleted"
+    Args:
+        - user.id: int(URL link)
+        - JWT token
+
+    Returns:
+        - user(id, username, user_type)
+    '''
+
+    if x_token == None:
+        raise HTTPException(status_code=401, detail='You must be logged in and be an admin to view accounts.')
+
+    user = get_user_or_raise_401(x_token)
+
+    if not user_service.is_admin(user):
+        raise HTTPException(status_code=401, detail='Only admins can view accounts.')
+
+    if not utilities.id_exists(id, 'users'):
+        raise HTTPException(status_code=404, detail=f'User with id {id} does not exist.')
+
+    return user_service.find_by_id_admin(id)
 
 
-def check_token(request: Request):
-    x_token = request.headers.get("Authorization")
-    if not JwtBearer.verify_jwt(x_token):
-        raise HTTPException(status_code=403, detail='Invalid or expired token')
-    return x_token 
+@users_router.put('/edit/{id}')
+def edit_users_role(new_user: User, id: int, x_token: str = Header(default=None)):
+    ''' Used for editing a user's role through user.id. Only admins can edit it.
+
+    Args:
+        - user.id: int(URL link)
+        - JWT token
+
+    Returns:
+        - Edited user
+    '''
+
+    if x_token == None:
+        raise HTTPException(status_code=401, detail='You must be logged in and be an admin to edit users roles.')
+
+    user = get_user_or_raise_401(x_token)
+
+    if not user_service.is_admin(user):
+        raise HTTPException(status_code=401, detail='Only admins can edit roles.')
+
+    if not utilities.id_exists(id, 'users'):
+        raise HTTPException(status_code=404, detail=f'User with id {id} does not exist.')
+
+    if new_user.user_type != 'admin' and new_user.user_type != 'user':
+        raise HTTPException(status_code=404, detail='Unknown role.')
+
+    old_user = find_by_id(id)
+
+    return user_service.edit_user_type(old_user, new_user)
+
+
+@users_router.delete('/delete/{id}')
+def delete_user(id: int, x_token: str = Header(default=None)):
+    ''' Used for deleting a user through user.id. Only admins can delete it.
+
+    Args:
+        - user.id: int(URL link)
+        - JWT token
+
+    Returns:
+        - Deleted user
+    '''
+
+    if x_token == None:
+        raise HTTPException(status_code=401, detail='You must be logged in and be an admin to delete a user.')
+
+    user = get_user_or_raise_401(x_token)
+
+    if not utilities.id_exists(id, 'users'):
+        raise HTTPException(status_code=404, detail=f'User with id {id} does not exist.')
+
+    if user_service.is_admin(user):
+        user_service.delete_user(id)
+
+    if not user_service.is_admin(user):
+        raise HTTPException(status_code=401, detail='You must be admin to delete a user.')
+
+    return {'User deleted.'}

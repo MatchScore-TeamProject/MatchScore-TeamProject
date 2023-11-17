@@ -5,7 +5,7 @@ from db_password import password
 
 def _get_connection() -> Connection:
     ''' Connects to the database through MariaDB.'''
-    
+
     return connect(
         user="root",
         password=password,

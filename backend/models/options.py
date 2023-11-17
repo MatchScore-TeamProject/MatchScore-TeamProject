@@ -1,13 +1,10 @@
 from enum import Enum
 
 
-class Role(Enum):
+class Role:
     USER = "user"
     ADMIN = "admin"
     DIRECTOR = "director"
-
-    def __str__(self):
-        return str(self.value).capitalize()
 
 
 class TournamentStatus(Enum):
