@@ -12,11 +12,6 @@ class TournamentStatus(Enum):
     CLOSED = "closed"
 
 
-# class TournamentFormat(Enum):
-#     KNOCKOUT = "knockout"
-#     LEAGUE = "league"
-
-
 class MatchFormat(Enum):
     TIME = "time"
     SCORE = "score"

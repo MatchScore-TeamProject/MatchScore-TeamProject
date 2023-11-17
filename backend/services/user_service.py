@@ -1,148 +1,97 @@
-from fastapi import APIRouter, Header, HTTPException
-from authentication.auth import find_by_id, get_user_or_raise_401, create_token
-from models.user import User, LoginData
-from services import user_service, utilities
-
-users_router = APIRouter(prefix='/users', tags=['Users'])
+# from data.models.user import User, Role
+from database.database_connection import read_query, read_query_additional, update_query, insert_query
+from models.user import User, LoginData, Role
+from authentication.auth import find_by_email, find_by_id
 
 
-@users_router.post('/register')
-def register(data: LoginData):
-    ''' Used for registering new users.
+def _hash_password(password: str):
+    ''' Used to hash a password of a user before saving it in the database.'''
+    from hashlib import sha256
+    return sha256(password.encode('utf-8')).hexdigest()
+
+
+def try_login(email: str, password: str) -> User | None:
+    ''' Used to hash the login password and compare it with the existing password of the user in the database.'''
+
+    user = find_by_email(email)
+
+    password = _hash_password(password)
+    return user if user and user.password == password else None
+
+
+def create(email: str, password: str) -> User | None:
+    ''' Used to save the already hashed password to the database.'''
+
+    password = _hash_password(password)
+
+    generated_id = insert_query(
+        'INSERT INTO users(email, password, user_type) VALUES (?,?,?)',
+        (email, password, Role.USER))
+
+    return User(id=generated_id, email=email, password='', role=Role.USER)
+
+
+def delete_user(id: int):
+    ''' Used for deleting the user from the database.'''
+
+    insert_query('''DELETE FROM users WHERE id = ?''',
+                 (id,))
+
+
+def edit_user_type(old_user: User, new_user: User):
+    ''' Used for editing by an admin a role of a user in the database.'''
+
+    edited_user = User(
+        id=old_user.id,
+        username=old_user.email,
+        password=old_user.password,
+        role=new_user.user_type
+    )
+
+    update_query('''UPDATE users SET role = ? WHERE id = ?''',
+                 (edited_user.user_type, edited_user.id))
+
+    return {"User's role updated."}
+
+
+def is_admin(user: User):
+    ''' Compares the user's role if it's an admin when a JWT token is written in the Header.
+    Returns:
+        - True/False
+    '''
+    return user.user_type == Role.ADMIN
+
+
+def all_users():
+    data = read_query(
+        '''SELECT id, email, user_type, player_profile_id
+        from users''')
+    if data is None:
+        return None
+
+    return (User.from_query_result_no_password(*row) for row in data)
+
+
+def get_by_id(id: int):
+    data = read_query(
+        '''SELECT id, email, user_type, player_profile_id
+        from users
+        where id = ?''', (id,))
+    return next((User.from_query_result_no_password(*row) for row in data), None)
+
+
+def find_by_id_admin(id: int) -> User | None:
+    ''' Search through users.id the whole information about the account in the data. Only admins can search for them.
 
     Args:
-        - LoginData(username, password(str))
+        - id: int 
 
     Returns:
-        - Registered user as customer
+        - all the necessary information about the user (id, username, hashed password, role and etc.)
     '''
 
-    user = user_service.create(data.email, data.password)
+    data = read_query(
+        'SELECT id, email, user_type, player_profile_id FROM users WHERE id = ?',
+        (id,))
 
-    return user or HTTPException(status_code=400, detail=f'Email {data.email} is already taken.')
-
-
-@users_router.post('/login')
-def login(data: LoginData):
-    ''' Used for logging in.
-
-    Args:
-        - LoginData(email, password(str))
-
-    Returns:
-        - JWT token
-    '''
-    user = user_service.try_login(data.email, data.password)
-    if user:
-        token = create_token(user)
-        return {'token': token}
-    else:
-        raise HTTPException(status_code=400, detail='Invalid login data.')
-
-
-@users_router.get('/')
-def all_users(x_token: str = Header(default=None)):
-    ''' Used for admins to see a list with all users.
-
-    Args:
-        - JWT token
-
-    Returns:
-        - list of users(id, username, role)
-    '''
-
-    if x_token == None:
-        raise HTTPException(status_code=401, detail='You must be logged in to view a list with users.')
-
-    user = get_user_or_raise_401(x_token)
-
-    if not user_service.is_admin(user):
-        raise HTTPException(status_code=401, detail='Only admins can view a list with all users.')
-
-    return user_service.all_users()
-
-
-@users_router.get('/{id}')
-def user_info(id: int, x_token: str = Header(default=None)):
-    ''' Used for admins to see data information about a user.
-
-    Args:
-        - user.id: int(URL link)
-        - JWT token
-
-    Returns:
-        - user(id, username, user_type)
-    '''
-
-    if x_token == None:
-        raise HTTPException(status_code=401, detail='You must be logged in and be an admin to view accounts.')
-
-    user = get_user_or_raise_401(x_token)
-
-    if not user_service.is_admin(user):
-        raise HTTPException(status_code=401, detail='Only admins can view accounts.')
-
-    if not utilities.id_exists(id, 'users'):
-        raise HTTPException(status_code=404, detail=f'User with id {id} does not exist.')
-
-    return user_service.find_by_id_admin(id)
-
-
-@users_router.put('/edit/{id}')
-def edit_users_role(new_user: User, id: int, x_token: str = Header(default=None)):
-    ''' Used for editing a user's role through user.id. Only admins can edit it.
-
-    Args:
-        - user.id: int(URL link)
-        - JWT token
-
-    Returns:
-        - Edited user
-    '''
-
-    if x_token == None:
-        raise HTTPException(status_code=401, detail='You must be logged in and be an admin to edit users roles.')
-
-    user = get_user_or_raise_401(x_token)
-
-    if not user_service.is_admin(user):
-        raise HTTPException(status_code=401, detail='Only admins can edit roles.')
-
-    if not utilities.id_exists(id, 'users'):
-        raise HTTPException(status_code=404, detail=f'User with id {id} does not exist.')
-
-    if new_user.user_type != 'admin' and new_user.user_type != 'user':
-        raise HTTPException(status_code=404, detail='Unknown role.')
-
-    old_user = find_by_id(id)
-
-    return user_service.edit_user_type(old_user, new_user)
-
-
-@users_router.delete('/delete/{id}')
-def delete_user(id: int, x_token: str = Header(default=None)):
-    ''' Used for deleting a user through user.id. Only admins can delete it.
-
-    Args:
-        - user.id: int(URL link)
-        - JWT token
-
-    Returns:
-        - Deleted user
-    '''
-
-    if x_token == None:
-        raise HTTPException(status_code=401, detail='You must be logged in and be an admin to delete a user.')
-
-    user = get_user_or_raise_401(x_token)
-
-    if not utilities.id_exists(id, 'users'):
-        raise HTTPException(status_code=404, detail=f'User with id {id} does not exist.')
-
-    if user_service.is_admin(user):
-        user_service.delete_user(id)
-
-    if not user_service.is_admin(user):
-        raise HTTPException(status_code=401, detail='You must be admin to delete a user.')
-
-    return {'User deleted.'}
+    return next((User.from_query_result_no_password(*row) for row in data), None)
