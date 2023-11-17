@@ -11,10 +11,10 @@ def register(data: LoginData):
     ''' Used for registering new users.
 
     Args:
-        - LoginData(username, password(str))
+        - LoginData(email, password(str))
 
     Returns:
-        - Registered user as customer
+        - Registered user
     '''
 
     user = user_service.create(data.email, data.password)

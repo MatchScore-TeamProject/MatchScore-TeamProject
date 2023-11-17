@@ -43,12 +43,12 @@ def edit_user_type(old_user: User, new_user: User):
 
     edited_user = User(
         id=old_user.id,
-        username=old_user.email,
+        email=old_user.email,
         password=old_user.password,
-        role=new_user.user_type
+        user_type=new_user.user_type
     )
 
-    update_query('''UPDATE users SET role = ? WHERE id = ?''',
+    update_query('''UPDATE users SET user_type = ? WHERE id = ?''',
                  (edited_user.user_type, edited_user.id))
 
     return {"User's role updated."}
