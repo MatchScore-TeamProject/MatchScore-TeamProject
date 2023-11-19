@@ -8,14 +8,14 @@ users_router = APIRouter(prefix='/users', tags=['Users'])
 
 @users_router.post('/register')
 def register(data: LoginData):
-    ''' Used for registering new users.
+    """ Used for registering new users.
 
     Args:
         - LoginData(email, password(str))
 
     Returns:
         - Registered user
-    '''
+    """
 
     user = user_service.create(data.email, data.password)
 
@@ -24,14 +24,14 @@ def register(data: LoginData):
 
 @users_router.post('/login')
 def login(data: LoginData):
-    ''' Used for logging in.
+    """ Used for logging in.
 
     Args:
         - LoginData(email, password(str))
 
     Returns:
         - JWT token
-    '''
+    """
     user = user_service.try_login(data.email, data.password)
     if user:
         token = create_token(user)
@@ -42,14 +42,14 @@ def login(data: LoginData):
 
 @users_router.get('/')
 def all_users(x_token: str = Header(default=None)):
-    ''' Used for admins to see a list with all users.
+    """ Used for admins to see a list with all users.
 
     Args:
         - JWT token
 
     Returns:
         - list of users(id, username, role)
-    '''
+    """
 
     if x_token == None:
         raise HTTPException(status_code=401, detail='You must be logged in to view a list with users.')
@@ -64,7 +64,7 @@ def all_users(x_token: str = Header(default=None)):
 
 @users_router.get('/{id}')
 def user_info(id: int, x_token: str = Header(default=None)):
-    ''' Used for admins to see data information about a user.
+    """ Used for admins to see data information about a user.
 
     Args:
         - user.id: int(URL link)
@@ -72,7 +72,7 @@ def user_info(id: int, x_token: str = Header(default=None)):
 
     Returns:
         - user(id, username, user_type)
-    '''
+    """
 
     if x_token == None:
         raise HTTPException(status_code=401, detail='You must be logged in and be an admin to view accounts.')
@@ -90,7 +90,7 @@ def user_info(id: int, x_token: str = Header(default=None)):
 
 @users_router.put('/edit/{id}')
 def edit_users_role(new_user: User, id: int, x_token: str = Header(default=None)):
-    ''' Used for editing a user's role through user.id. Only admins can edit it.
+    """ Used for editing a user's role through user.id. Only admins can edit it.
 
     Args:
         - user.id: int(URL link)
@@ -98,7 +98,7 @@ def edit_users_role(new_user: User, id: int, x_token: str = Header(default=None)
 
     Returns:
         - Edited user
-    '''
+    """
 
     if x_token == None:
         raise HTTPException(status_code=401, detail='You must be logged in and be an admin to edit users roles.')
@@ -121,7 +121,7 @@ def edit_users_role(new_user: User, id: int, x_token: str = Header(default=None)
 
 @users_router.delete('/delete/{id}')
 def delete_user(id: int, x_token: str = Header(default=None)):
-    ''' Used for deleting a user through user.id. Only admins can delete it.
+    """ Used for deleting a user through user.id. Only admins can delete it.
 
     Args:
         - user.id: int(URL link)
@@ -129,7 +129,7 @@ def delete_user(id: int, x_token: str = Header(default=None)):
 
     Returns:
         - Deleted user
-    '''
+    """
 
     if x_token == None:
         raise HTTPException(status_code=401, detail='You must be logged in and be an admin to delete a user.')
