@@ -1,5 +1,5 @@
 from database.database_connection import read_query, read_query_additional, update_query, insert_query
-from models.user import User, LoginData
+from models.user import User
 from authentication.auth import find_by_email, find_by_id
 from models.options import Role
 
@@ -95,3 +95,13 @@ def find_by_id_admin(id: int) -> User | None:
         (id,))
 
     return next((User.from_query_result_no_password(*row) for row in data), None)
+
+
+def is_director(user: User):
+    """
+    Compares the user's role if it's an admin when a JWT token is written in the Header.
+    Returns:
+        - True/False
+    """
+
+    return user.user_type == Role.DIRECTOR
