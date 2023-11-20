@@ -1,7 +1,11 @@
 from database.database_connection import read_query, read_query_additional, update_query, insert_query
+from fastapi import HTTPException
 from models.user import User
 from authentication.auth import find_by_email, find_by_id
 from models.options import Role
+
+from backend.models.link_requests import LinkRequest
+from backend.services import utilities
 
 
 def _hash_password(password: str):
@@ -105,3 +109,84 @@ def is_director(user: User):
     """
 
     return user.user_type == Role.DIRECTOR
+
+
+def create_link_request(user_id: int, player_profile_id: int):
+    """
+
+    Args:
+        user_id:
+        player_profile_id:
+
+    Returns:
+        - returns the Link
+
+    """
+    query = 'INSERT INTO link_requests (user_id, player_profile_id, status) VALUES (?, ?, ?)'
+    link_request_id = insert_query(query, (user_id, player_profile_id, 'pending'))
+    return LinkRequest(id=link_request_id, user_id=user_id, player_profile_id=player_profile_id, status='pending')
+
+
+def approve_link_request(link_request_id: int) -> str:
+    """
+    Approve a link request, updating both the player_profile and users tables.
+
+    Args:
+        - link_request_id: int
+
+    Returns:
+        - A message indicating success.
+    """
+
+    link_request_data = read_query(
+        "SELECT status, user_id, player_profile_id FROM link_requests WHERE id = ?",
+        (link_request_id,)
+    )
+
+    if not link_request_data:
+        raise HTTPException(status_code=404, detail=f"No link request with ID: {link_request_id} exists.")
+
+    current_status, user_id, player_profile_id = link_request_data[0]
+
+    if current_status == "approved":
+        raise HTTPException(status_code=409, detail="Status cannot be changed from approved to denied and vice versa.")
+
+    update_query(
+        "UPDATE player_profile SET users_id = ? WHERE id = ?",
+        (user_id, player_profile_id)
+    )
+
+    update_query(
+        "UPDATE link_requests SET status = 'approved' WHERE id = ?",
+        (link_request_id,)
+    )
+
+    return "Link request approved."
+
+
+def deny_link_request(link_request_id: int) -> str:
+    """
+    Deny a link request, updating the status of the request.
+
+    Args:
+        - link_request_id: int
+
+    Returns:
+        - A message indicating failure.
+    """
+    link_request_data = read_query(
+        "SELECT status FROM link_requests WHERE id = ?",
+        (link_request_id,)
+    )
+
+    current_status = link_request_data[0][0]
+
+    if current_status == "denied":
+        raise HTTPException(status_code=404, detail="Status cannot be changed from denied to approved and vice versa.")
+
+    if not utilities.id_exists(link_request_id):
+        raise HTTPException(status_code=404, detail=f"No link request with ID: {link_request_id} exists.")
+
+    update_query("UPDATE link_requests SET status = ? WHERE id = ?", ("denied", link_request_id))
+
+    return "Link request denied"
