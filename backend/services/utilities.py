@@ -1,8 +1,4 @@
-import datetime
-
 from database.database_connection import read_query
-
-CURRENT_DATE_TIME = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
 def name_exists(name: str, table_name: str) -> bool:
