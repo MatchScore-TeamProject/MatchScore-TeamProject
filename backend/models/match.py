@@ -5,7 +5,7 @@ from models.options import MatchFormat
 
 class Match(BaseModel):
     id: int | None = None
-    date: date
+    date: str #date
     format: MatchFormat
     tournament_id: int | None = None
     participant_1: int
