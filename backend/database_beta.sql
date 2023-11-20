@@ -15,6 +15,64 @@ CREATE SCHEMA IF NOT EXISTS `match_score_project` DEFAULT CHARACTER SET latin1 ;
 USE `match_score_project` ;
 
 -- -----------------------------------------------------
+-- Table `match_score_project`.`users`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `match_score_project`.`users` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `email` VARCHAR(45) NOT NULL,
+  `password` VARCHAR(99) NOT NULL,
+  `user_type` VARCHAR(45) NOT NULL DEFAULT 'user',
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `email_UNIQUE` (`email` ASC) VISIBLE)
+ENGINE = InnoDB
+AUTO_INCREMENT = 11
+DEFAULT CHARACTER SET = latin1;
+
+
+-- -----------------------------------------------------
+-- Table `match_score_project`.`player_profile`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `match_score_project`.`player_profile` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `full_name` VARCHAR(45) NOT NULL,
+  `country` VARCHAR(45) NOT NULL,
+  `sports_club` VARCHAR(45) NULL DEFAULT NULL,
+  `users_id` INT(11) NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `fk_player_profile_users1_idx` (`users_id` ASC) VISIBLE,
+  CONSTRAINT `fk_player_profile_users1`
+    FOREIGN KEY (`users_id`)
+    REFERENCES `match_score_project`.`users` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB
+AUTO_INCREMENT = 3
+DEFAULT CHARACTER SET = latin1;
+
+
+-- -----------------------------------------------------
+-- Table `match_score_project`.`link_requests`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `match_score_project`.`link_requests` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `user_id` INT(11) NOT NULL,
+  `player_profile_id` INT(11) NOT NULL,
+  `status` VARCHAR(10) NOT NULL DEFAULT 'pending',
+  PRIMARY KEY (`id`),
+  INDEX `user_id` (`user_id` ASC) VISIBLE,
+  INDEX `player_profile_id` (`player_profile_id` ASC) VISIBLE,
+  CONSTRAINT `link_requests_ibfk_1`
+    FOREIGN KEY (`user_id`)
+    REFERENCES `match_score_project`.`users` (`id`),
+  CONSTRAINT `link_requests_ibfk_2`
+    FOREIGN KEY (`player_profile_id`)
+    REFERENCES `match_score_project`.`player_profile` (`id`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 3
+DEFAULT CHARACTER SET = latin1;
+
+
+-- -----------------------------------------------------
 -- Table `match_score_project`.`tournaments`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `match_score_project`.`tournaments` (
@@ -34,80 +92,70 @@ DEFAULT CHARACTER SET = latin1;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `match_score_project`.`matches` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
-  `participants` VARCHAR(45) NOT NULL,
-  `timestamp` DATETIME NOT NULL,
-  `time_limit` INT(11) NULL DEFAULT NULL,
-  `score_limit` INT(11) NULL DEFAULT NULL,
-  `duration` INT(11) NOT NULL,
-  `score` INT(11) NULL DEFAULT NULL,
+  `date` DATE NOT NULL,
+  `format` VARCHAR(45) NOT NULL,
   `tournament_id` INT(11) NULL DEFAULT NULL,
+  `score_1` INT(11) NULL DEFAULT NULL,
+  `score_2` INT(11) NULL DEFAULT NULL,
+  `player_profile_id1` INT(11) NOT NULL,
+  `player_profile_id2` INT(11) NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `fk_match_tournament1_idx` (`tournament_id` ASC) VISIBLE,
+  INDEX `fk_matches_player_profile1_idx` (`player_profile_id1` ASC) VISIBLE,
+  INDEX `fk_matches_player_profile2_idx` (`player_profile_id2` ASC) VISIBLE,
   CONSTRAINT `fk_match_tournament1`
     FOREIGN KEY (`tournament_id`)
+    REFERENCES `match_score_project`.`tournaments` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_matches_player_profile1`
+    FOREIGN KEY (`player_profile_id1`)
+    REFERENCES `match_score_project`.`player_profile` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_matches_player_profile2`
+    FOREIGN KEY (`player_profile_id2`)
+    REFERENCES `match_score_project`.`player_profile` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = latin1;
+
+
+-- -----------------------------------------------------
+-- Table `match_score_project`.`tournaments_has_player_profile`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `match_score_project`.`tournaments_has_player_profile` (
+  `tournaments_id` INT(11) NOT NULL,
+  `player_profile_id` INT(11) NOT NULL,
+  PRIMARY KEY (`tournaments_id`, `player_profile_id`),
+  INDEX `fk_tournaments_has_player_profile_player_profile1_idx` (`player_profile_id` ASC) VISIBLE,
+  INDEX `fk_tournaments_has_player_profile_tournaments1_idx` (`tournaments_id` ASC) VISIBLE,
+  CONSTRAINT `fk_tournaments_has_player_profile_player_profile1`
+    FOREIGN KEY (`player_profile_id`)
+    REFERENCES `match_score_project`.`player_profile` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_tournaments_has_player_profile_tournaments1`
+    FOREIGN KEY (`tournaments_id`)
     REFERENCES `match_score_project`.`tournaments` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = latin1;
 
+INSERT INTO `match_score_project`.`users` (`id`, `email`, `password`, `user_type`) VALUES ('7', 'admin@email.bg', '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', 'admin');
+INSERT INTO `match_score_project`.`users` (`id`, `email`, `password`, `user_type`) VALUES ('8', 'rado@email.bg', '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', 'user');
+INSERT INTO `match_score_project`.`users` (`id`, `email`, `password`, `user_type`) VALUES ('9', 'georgi@email.bg', '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', 'user');
+INSERT INTO `match_score_project`.`users` (`id`, `email`, `password`, `user_type`) VALUES ('10', 'deyan@email.bg', '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', 'user');
 
--- -----------------------------------------------------
--- Table `match_score_project`.`player_profile`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `match_score_project`.`player_profile` (
-  `id` INT(11) NOT NULL AUTO_INCREMENT,
-  `full_name` VARCHAR(45) NOT NULL,
-  `country` VARCHAR(45) NOT NULL,
-  `sports_club` VARCHAR(45) NULL DEFAULT NULL,
-  PRIMARY KEY (`id`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = latin1;
+INSERT INTO `match_score_project`.`player_profile` (`full_name`, `country`, `users_id`) VALUES ('Radoslav Slavov', 'Bulgaria', '8');
+INSERT INTO `match_score_project`.`player_profile` (`full_name`, `country`, `users_id`) VALUES ('Georgi Dodekov', 'Bulgaria', '9');
+INSERT INTO `match_score_project`.`player_profile` (`full_name`, `country`, `users_id`) VALUES ('Deyan Totin', 'Bulgaria', '10');
 
-
--- -----------------------------------------------------
--- Table `match_score_project`.`matches_has_player_profile`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `match_score_project`.`matches_has_player_profile` (
-  `matches_id` INT(11) NOT NULL,
-  `player_profile_id` INT(11) NOT NULL,
-  PRIMARY KEY (`matches_id`, `player_profile_id`),
-  INDEX `fk_matches_has_player_profile_player_profile1_idx` (`player_profile_id` ASC) VISIBLE,
-  INDEX `fk_matches_has_player_profile_matches1_idx` (`matches_id` ASC) VISIBLE,
-  CONSTRAINT `fk_matches_has_player_profile_matches1`
-    FOREIGN KEY (`matches_id`)
-    REFERENCES `match_score_project`.`matches` (`id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_matches_has_player_profile_player_profile1`
-    FOREIGN KEY (`player_profile_id`)
-    REFERENCES `match_score_project`.`player_profile` (`id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = latin1;
-
-
--- -----------------------------------------------------
--- Table `match_score_project`.`users`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `match_score_project`.`users` (
-  `id` INT(11) NOT NULL AUTO_INCREMENT,
-  `email` VARCHAR(45) NOT NULL,
-  `password` VARCHAR(99) NOT NULL,
-  `player_profile_id` INT(11) NULL DEFAULT NULL,
-  `user_type` VARCHAR(45) NOT NULL DEFAULT 'user',
-  PRIMARY KEY (`id`),
-  UNIQUE INDEX `email_UNIQUE` (`email` ASC) VISIBLE,
-  INDEX `fk_users_player_profile1_idx` (`player_profile_id` ASC) VISIBLE,
-  CONSTRAINT `fk_users_player_profile1`
-    FOREIGN KEY (`player_profile_id`)
-    REFERENCES `match_score_project`.`player_profile` (`id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = latin1;
-
+INSERT INTO `match_score_project`.`matches` (`date`, `format`, `score_1`, `score_2`, `player_profile_id1`, `player_profile_id2`) VALUES ('2023-11-17', 'time', '1', '1', '3', '4');
+INSERT INTO `match_score_project`.`matches` (`date`, `format`, `score_1`, `score_2`, `player_profile_id1`, `player_profile_id2`) VALUES ('2023-11-18', 'time', '2', '2', '5', '4');
+INSERT INTO `match_score_project`.`matches` (`date`, `format`, `player_profile_id1`, `player_profile_id2`) VALUES ('2023-11-25', 'time', '3', '5');
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
