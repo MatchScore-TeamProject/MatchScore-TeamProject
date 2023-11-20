@@ -25,6 +25,7 @@ def exist(id: int):
 
 
 def data_update(new_data):
+    ...
 
 
 def check_date_of_match(id: int):

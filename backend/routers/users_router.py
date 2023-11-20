@@ -146,3 +146,61 @@ def delete_user(id: int, x_token: str = Header(default=None)):
         raise HTTPException(status_code=401, detail='You must be admin to delete a user.')
 
     return {'User deleted.'}
+
+
+@users_router.post("/link-request")
+def send_link_request(user_id: int, player_profile_id: int, x_token: str = Header(default=None)):
+    """ Creates a link request. Only admins can approve or deny requests.
+
+    Args:
+        user_id: int
+        player_profile_id: int
+        x_token: JTW token
+
+    Returns:
+        A message about the sending of the request.
+
+    """
+
+    if x_token is None:
+        raise HTTPException(status_code=401, detail="You must be logged in to send a request.")
+
+    if user_id != get_user_or_raise_401(x_token).id:
+        raise HTTPException(status_code=401, detail="Can't send request for another user.")
+
+    if not utilities.id_exists(user_id, 'users'):
+        raise HTTPException(status_code=404, detail=f'User with id {user_id} does not exist.')
+
+    user_service.create_link_request(user_id, player_profile_id)
+
+    return "Request was sent for an admin to approve or deny."
+
+
+@users_router.put("/link-request/approve/{link_request_id}")
+def approve_link_request(link_request_id, x_token: str = Header(default=None)):
+    user = get_user_or_raise_401(x_token)
+
+    if x_token is None:
+        raise HTTPException(status_code=401, detail="You must be logged in to approve a request.")
+
+    if not user_service.is_admin(user):
+        raise HTTPException(status_code=401, detail="You must be admin to approve a request.")
+
+    user_service.approve_link_request(link_request_id)
+
+    return f"Request with ID: {link_request_id} was approved."
+
+
+@users_router.put("/link-request/deny/{link_request_id}")
+def deny_link_request(link_request_id, x_token: str = Header(default=None)):
+    user = get_user_or_raise_401(x_token)
+
+    if x_token is None:
+        raise HTTPException(status_code=401, detail="You must be logged in to deny a request.")
+
+    if not user_service.is_admin(user):
+        raise HTTPException(status_code=401, detail="You must be admin to deny a request.")
+
+    user_service.deny_link_request(link_request_id)
+
+    return f"Request with ID: {link_request_id} was denied."

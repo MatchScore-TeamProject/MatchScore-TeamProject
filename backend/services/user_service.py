@@ -148,8 +148,8 @@ def approve_link_request(link_request_id: int) -> str:
 
     current_status, user_id, player_profile_id = link_request_data[0]
 
-    if current_status == "approved":
-        raise HTTPException(status_code=409, detail="Status cannot be changed from approved to denied and vice versa.")
+    if current_status == "denied":
+        raise HTTPException(status_code=404, detail="Status cannot be changed from approved to denied and vice versa.")
 
     update_query(
         "UPDATE player_profile SET users_id = ? WHERE id = ?",
@@ -181,10 +181,10 @@ def deny_link_request(link_request_id: int) -> str:
 
     current_status = link_request_data[0][0]
 
-    if current_status == "denied":
+    if current_status == "approved":
         raise HTTPException(status_code=404, detail="Status cannot be changed from denied to approved and vice versa.")
 
-    if not utilities.id_exists(link_request_id):
+    if not utilities.id_exists(link_request_id, "link_requests"):
         raise HTTPException(status_code=404, detail=f"No link request with ID: {link_request_id} exists.")
 
     update_query("UPDATE link_requests SET status = ? WHERE id = ?", ("denied", link_request_id))
