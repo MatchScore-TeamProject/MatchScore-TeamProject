@@ -1,22 +1,27 @@
 from pydantic import BaseModel
-from models.player_profile import PlayerProfile
-from datetime import datetime
+from datetime import date
+from models.options import MatchFormat
 
 
 class Match(BaseModel):
     id: int | None = None
-    timestamp: datetime
-    duration: int
-    participants: list[PlayerProfile] = []  # FIX THIS IN DB player_profile
-    # time_limit, score_limit, score ???
+    date: date
+    format: MatchFormat
+    tournament_id: int | None = None
+    participant_1: int
+    participant_2: int
+    score_1: int | None = None
+    score_2: int | None = None
 
     @classmethod
-    def from_query_result(cls, id, timestamp, duration, participants):
-        
+    def from_query_result(cls, id, date, format, tournament_id, participant_1, participant_2, score_1, score_2):
         return cls(
             id=id,
-            timestamp=timestamp,
-            duration=duration,
-            participants=participants,
+            date=date,
+            format=format,
+            tournament_id=tournament_id,
+            participant_1=participant_1,
+            participant_2=participant_2,
+            score_1=score_1,
+            score_2=score_2
         )
-    
