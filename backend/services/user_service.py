@@ -4,8 +4,8 @@ from models.user import User
 from authentication.auth import find_by_email, find_by_id
 from models.options import Role
 
-from backend.models.link_requests import LinkRequest
-from backend.services import utilities
+from models.link_requests import LinkRequest
+from services import utilities
 
 
 def _hash_password(password: str):

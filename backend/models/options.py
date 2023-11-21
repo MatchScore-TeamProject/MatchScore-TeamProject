@@ -12,12 +12,12 @@ class TournamentStatus(Enum):
     CLOSED = "closed"
 
 
-class MatchFormat(Enum):
+class MatchFormat(str, Enum):
     TIME = "time"
     SCORE = "score"
 
-    def __str__(self):
-        return str(self.value).capitalize() + ' limited'
+    # def __str__(self):
+    #     return str(self.value).capitalize()
 
     # + ' limited': This concatenates the capitalized string with the literal string " limited."
     # So, when you call str(format_time) or str(format_score),

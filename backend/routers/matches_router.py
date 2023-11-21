@@ -7,51 +7,97 @@ from authentication.auth import get_user_or_raise_401
 matches_router = APIRouter(prefix='/matches', tags=['Matches'])
 
 
-@matches_router.post('/')
-def create_match(date: str = Query(description="Enter a date to create a match in format: yyyy-mm-dd"),
-                 format: str = Query("time or score"),
-                 participant_1: int = Query(),
-                 participant_2: int = Query(),
-                 x_token: str = Header(default=None)):
-    user = get_user_or_raise_401(x_token)
+@matches_router.get('/', description="Show all matches.")
+def get_all_matches():
 
-    if x_token == None:
-        raise HTTPException(status_code=401, detail="You need to be logged in to create a match!")
+    result = matches_service.all()
+    return result
 
-    if not (is_admin(user) or is_director(user)):
-        raise HTTPException(status_code=401, detail="Unauthorized user to create match.")
 
-    match = matches_service.create(date=date, format=format, participant_1=participant_1, participant_2=participant_2)
+@matches_router.get('/{id}', description="Show match by id.")
+def get_match_by_id(id: int):
+
+    match = matches_service.get_by_id(id)
+
+    if match is None:
+        return HTTPException(status_code=404, detail=f"Match with id:{id} not found!")
+
     return match
 
 
-@matches_router.get('/', description="Get all matches.")
-def get_match_by_id():
-    pass
-
-
-@matches_router.put('/')  # try with patch
-def update_score():
-    pass
-
-
 @matches_router.put('/update/{id}')
-def update_date(id: int, match: Match, x_token: str):
+def update_match_by_id(id: int, match: Match, x_token: str):
+
     user = get_user_or_raise_401(x_token)
 
     if x_token is None:
-        raise HTTPException(status_code=401, detail="You need to be logged in to update match date!")
+        raise HTTPException(status_code=401, detail="You need to be logged in to update match!")
 
     if not (is_admin(user) or is_director(user)):
         raise HTTPException(status_code=401, detail="Unauthorized user to change match date.")
 
     if not matches_service.exist(id):
-        return HTTPException(status_code=401, detail=f"Match with id:{id} doesn't exist!")
+        return HTTPException(status_code=404, detail=f"Match with id:{id} doesn't exist!")
 
-    # check for future date (future_date in utilities)
-    # today =
+    existing_match = matches_service.get_by_id(id)
+
+    return matches_service.update_by_id(existing_match, match)
+
+#
+# # This functionality should be completed
+# @matches_router.patch('/{id}')
+# def update_date(id: int, match: Match, x_token: str):
+#
+#     user = get_user_or_raise_401(x_token)
+#
+#     if x_token is None:
+#         raise HTTPException(status_code=401, detail="You need to be logged in to update match!")
+#
+#     if not (is_admin(user) or is_director(user)):
+#         raise HTTPException(status_code=401, detail="Unauthorized user to change match date.")
+#
+#     if not matches_service.exist(id):
+#         return HTTPException(status_code=404, detail=f"Match with id:{id} doesn't exist!")
+#
+#     # future_date = matches_service.check_date_of_match(id)
+#
+#     existing_match = matches_service.get_by_id(id)
+#
+#     return matches_service.update_by_id(existing_match, match)
 
 
-@matches_router.put('/')  # try with patch
-def update_players():
-    pass
+@matches_router.post('/')
+def create_match(date: str = Query(description="Enter a date to create a match in format: yyyy-mm-dd"),
+                 format: str = Query("time or score"),
+                 player_profile_id1: int = Query(),
+                 player_profile_id2: int = Query(),
+                 x_token: str = Header(default=None)):
+
+    user = get_user_or_raise_401(x_token)
+
+    if x_token is None:
+        raise HTTPException(status_code=401, detail="You need to be logged in to create a match!")
+
+    if not (is_admin(user) or is_director(user)):
+        raise HTTPException(status_code=401, detail="Unauthorized user to create match.")
+
+    match = matches_service.create(date=date, format=format, player_profile_id1=player_profile_id1, player_profile_id2=player_profile_id2)
+    return match
+
+
+@matches_router.delete('/delete/{id}')
+def delete_match(id: int, x_token: str = Header(default=None)):
+
+    user = get_user_or_raise_401(x_token)
+
+    if x_token is None:
+        raise HTTPException(status_code=401, detail="You need to be logged in to update match date!")
+
+    if not is_admin(user):
+        raise HTTPException(status_code=401, detail="Unauthorized user to change match date.")
+
+    match = matches_service.get_by_id(id)
+    if match is None:
+        return HTTPException(status_code=404, detail=f"No match found with id:{id}!")
+
+    matches_service.delete(id)
