@@ -7,9 +7,9 @@ class Role:
     DIRECTOR = "director"
 
 
-class TournamentStatus(Enum):
-    OPEN = "open"
-    CLOSED = "closed"
+# class TournamentStatus(Enum):
+#     OPEN = "open"
+#     CLOSED = "closed"
 
 
 class MatchFormat(str, Enum):
@@ -25,9 +25,9 @@ class MatchFormat(str, Enum):
     # it will return a string that looks like "Time limited" or "Score limited."
 
 
-class TournamentFormat(Enum):
-    KNOCKOUT = "knockout"
-    LEAGUE = "league"
+# class TournamentFormat(Enum):
+#     KNOCKOUT = "knockout"
+#     LEAGUE = "league"
 
-    def __str__(self):
-        return str(self.value).capitalize()
+#     def __str__(self):
+#         return str(self.value).capitalize()

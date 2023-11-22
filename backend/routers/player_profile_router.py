@@ -9,7 +9,8 @@ player_profile_router = APIRouter(prefix="/players", tags=["Players"])
 
 
 @player_profile_router.post("/create")
-def create_player_profile_endpoint(player_fullname: str,
+def create_player_profile_endpoint(nickname:str,
+                                   full_name: str,
                                    country: str,
                                    sports_club: str,
                                    x_token: str = Header(default=None)):
@@ -21,9 +22,9 @@ def create_player_profile_endpoint(player_fullname: str,
     if not is_admin(user):
         raise HTTPException(status_code=401, detail='Only admins can create a player profile.')
 
-    create_player_profile(player_fullname, country, sports_club, users_id=None)
+    create_player_profile(nickname, full_name, country, sports_club, users_id=None)
 
-    return f"Profile for {player_fullname} was created."
+    return f"Profile for {full_name} was created."
 
 
 @player_profile_router.delete("/delete")

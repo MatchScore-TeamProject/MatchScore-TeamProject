@@ -5,9 +5,6 @@ SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
 
 -- -----------------------------------------------------
--- Schema mydb
--- -----------------------------------------------------
--- -----------------------------------------------------
 -- Schema match_score_project
 -- -----------------------------------------------------
 
@@ -37,11 +34,13 @@ DEFAULT CHARACTER SET = latin1;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `match_score_project`.`player_profile` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `nickname` VARCHAR(45) NOT NULL,
   `full_name` VARCHAR(45) NOT NULL,
   `country` VARCHAR(45) NOT NULL,
   `sports_club` VARCHAR(45) NULL DEFAULT NULL,
   `users_id` INT(11) NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
+  UNIQUE INDEX `nickname_UNIQUE` (`nickname` ASC) VISIBLE,
   INDEX `fk_player_profile_users1_idx` (`users_id` ASC) VISIBLE,
   CONSTRAINT `fk_player_profile_users1`
     FOREIGN KEY (`users_id`)
@@ -80,8 +79,9 @@ DEFAULT CHARACTER SET = latin1;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `match_score_project`.`tournaments` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
-  `participants` VARCHAR(45) NOT NULL,
   `title` VARCHAR(45) NOT NULL,
+  `date` VARCHAR(45) NOT NULL,
+  `participants` INT(11) NOT NULL,
   `tournament_format` VARCHAR(45) NOT NULL,
   `match_format` VARCHAR(45) NOT NULL,
   `prize` INT(11) NULL DEFAULT NULL,
@@ -95,7 +95,7 @@ DEFAULT CHARACTER SET = latin1;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `match_score_project`.`matches` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
-  `date` DATE NOT NULL,
+  `date` VARCHAR(45) NOT NULL,
   `format` VARCHAR(45) NOT NULL,
   `tournament_id` INT(11) NULL DEFAULT NULL,
   `score_1` INT(11) NULL DEFAULT NULL,
@@ -131,12 +131,12 @@ DEFAULT CHARACTER SET = latin1;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `match_score_project`.`promote_requests` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
-  `user_id` INT(11) NOT NULL,
+  `users_id` INT(11) NOT NULL,
   `status` VARCHAR(10) NOT NULL,
   PRIMARY KEY (`id`),
-  INDEX `fk_promote_requests_users1_idx` (`user_id` ASC) VISIBLE,
+  INDEX `fk_promote_requests_users1_idx` (`users_id` ASC) VISIBLE,
   CONSTRAINT `fk_promote_requests_users1`
-    FOREIGN KEY (`user_id`)
+    FOREIGN KEY (`users_id`)
     REFERENCES `match_score_project`.`users` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
