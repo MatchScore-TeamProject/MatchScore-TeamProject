@@ -204,3 +204,78 @@ def deny_link_request(link_request_id, x_token: str = Header(default=None)):
     user_service.deny_link_request(link_request_id)
 
     return f"Request with ID: {link_request_id} was denied."
+
+
+@users_router.post("/promote-request")
+def send_promotion_request(user_id: int, x_token: str = Header(default=None)):
+    """
+    Creates a promotion to director request.
+
+    Args:
+        user_id: int
+        x_token: JWT token
+
+    Returns:
+        A message about the sending of the promotion request.
+    """
+
+    if x_token is None:
+        raise HTTPException(status_code=401, detail="You must be logged in to send a request.")
+
+    if user_id != get_user_or_raise_401(x_token).id:
+        raise HTTPException(status_code=401, detail="Unauthorized: You can only create requests for your own account.")
+
+    if not utilities.id_exists(user_id, 'users'):
+        raise HTTPException(status_code=404, detail=f'User with id {user_id} does not exist.')
+
+    user_service.create_promotion_request(user_id)
+
+    return "Promotion request was sent for an admin to review."
+
+
+@users_router.put("/promote-request/approve/{promote_request_id}")
+def approve_promotion_request_endpoint(promote_request_id: int, x_token: str = Header(default=None)):
+    """
+    Endpoint to approve a promotion request. Only admins can approve requests.
+
+    Args:
+        promote_request_id: int
+        x_token: JWT token
+
+    Returns:
+        A message indicating the result of the operation.
+    """
+    if x_token is None:
+        raise HTTPException(status_code=401, detail="You must be logged in to approve a request.")
+
+    user = get_user_or_raise_401(x_token)
+
+    # Assuming there's a function to check if the user is an admin
+    if not user_service.is_admin(user):
+        raise HTTPException(status_code=403, detail="Only admins can approve promotion requests.")
+
+    return user_service.approve_promote_request(promote_request_id)
+
+
+@users_router.put("/promote-request/deny/{promote_request_id}")
+def deny_promotion_request_endpoint(promote_request_id: int, x_token: str = Header(default=None)):
+    """
+    Endpoint to deny a promotion request. Only admins can deny requests.
+
+    Args:
+        promote_request_id: int
+        x_token: JWT token
+
+    Returns:
+        A message indicating the result of the operation.
+    """
+
+    if x_token is None:
+        raise HTTPException(status_code=401, detail="You must be logged in to deny a request.")
+
+    user = get_user_or_raise_401(x_token)
+
+    if not user_service.is_admin(user):
+        raise HTTPException(status_code=403, detail="Only admins can deny promotion requests.")
+
+    return user_service.deny_promote_request(promote_request_id)

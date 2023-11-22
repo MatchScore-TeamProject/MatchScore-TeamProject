@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS `match_score_project`.`users` (
   PRIMARY KEY (`id`),
   UNIQUE INDEX `email_UNIQUE` (`email` ASC) VISIBLE)
 ENGINE = InnoDB
-AUTO_INCREMENT = 11
+AUTO_INCREMENT = 14
 DEFAULT CHARACTER SET = latin1;
 
 
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS `match_score_project`.`player_profile` (
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
-AUTO_INCREMENT = 6
+AUTO_INCREMENT = 8
 DEFAULT CHARACTER SET = latin1;
 
 
@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS `match_score_project`.`link_requests` (
     FOREIGN KEY (`player_profile_id`)
     REFERENCES `match_score_project`.`player_profile` (`id`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 3
+AUTO_INCREMENT = 5
 DEFAULT CHARACTER SET = latin1;
 
 
@@ -95,7 +95,7 @@ DEFAULT CHARACTER SET = latin1;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `match_score_project`.`matches` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
-  `date` VARCHAR(45) NOT NULL,
+  `date` DATE NOT NULL,
   `format` VARCHAR(45) NOT NULL,
   `tournament_id` INT(11) NULL DEFAULT NULL,
   `score_1` INT(11) NULL DEFAULT NULL,
@@ -123,6 +123,25 @@ CREATE TABLE IF NOT EXISTS `match_score_project`.`matches` (
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
 AUTO_INCREMENT = 4
+DEFAULT CHARACTER SET = latin1;
+
+
+-- -----------------------------------------------------
+-- Table `match_score_project`.`promote_requests`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `match_score_project`.`promote_requests` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `user_id` INT(11) NOT NULL,
+  `status` VARCHAR(10) NOT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `fk_promote_requests_users1_idx` (`user_id` ASC) VISIBLE,
+  CONSTRAINT `fk_promote_requests_users1`
+    FOREIGN KEY (`user_id`)
+    REFERENCES `match_score_project`.`users` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB
+AUTO_INCREMENT = 2
 DEFAULT CHARACTER SET = latin1;
 
 

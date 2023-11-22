@@ -3,8 +3,7 @@ from fastapi import HTTPException
 from models.user import User
 from authentication.auth import find_by_email, find_by_id
 from models.options import Role
-
-from models.link_requests import LinkRequest
+from models.requests import LinkRequest, PromoteRequest
 from services import utilities
 
 
@@ -122,8 +121,16 @@ def create_link_request(user_id: int, player_profile_id: int):
         - returns the Link
 
     """
-    query = 'INSERT INTO link_requests (user_id, player_profile_id, status) VALUES (?, ?, ?)'
-    link_request_id = insert_query(query, (user_id, player_profile_id, 'pending'))
+    profile_link_status = read_query(
+        "SELECT users_id FROM player_profile WHERE id = ?",
+        (player_profile_id,)
+    )
+
+    if profile_link_status and profile_link_status[0][0] and profile_link_status[0][0] != user_id:
+        raise HTTPException(status_code=409, detail="This profile is already linked to another user.")
+
+    link_request_id = insert_query('INSERT INTO link_requests (user_id, player_profile_id, status) VALUES (?, ?, ?)',
+                                   (user_id, player_profile_id, 'pending'))
     return LinkRequest(id=link_request_id, user_id=user_id, player_profile_id=player_profile_id, status='pending')
 
 
@@ -190,3 +197,99 @@ def deny_link_request(link_request_id: int) -> str:
     update_query("UPDATE link_requests SET status = ? WHERE id = ?", ("denied", link_request_id))
 
     return "Link request denied"
+
+
+def create_promotion_request(user_id: int):
+    """
+    Creates a new promotion request in the database.
+
+    Args:
+        user_id: int
+
+    Returns:
+        A message indicating the creation of the request.
+    """
+
+    existing_request = read_query(
+        "SELECT id FROM promote_requests WHERE user_id = ? AND status = 'pending'",
+        (user_id,)
+    )
+
+    if existing_request:
+        raise HTTPException(status_code=409, detail="A pending promotion request already exists for this user.")
+
+    promotion_request_id = insert_query(
+        'INSERT INTO promote_requests (user_id, status) VALUES (?, ?)',
+        (user_id, 'pending')
+    )
+
+    return PromoteRequest(id=promotion_request_id, user_id=user_id, status="pending")
+
+
+def approve_promote_request(promote_request_id: int) -> str:
+    """
+    Approve a promotion request, updating the status in the promotion_requests table.
+
+    Args:
+        - promote_request_id: int
+
+    Returns:
+        - A message indicating success.
+    """
+
+    promote_request_data = read_query(
+        "SELECT status, user_id FROM promote_requests WHERE id = ?",
+        (promote_request_id,)
+    )
+
+    if not promote_request_data:
+        raise HTTPException(status_code=404, detail=f"No promote request with ID: {promote_request_id} exists.")
+
+    current_status, user_id = promote_request_data[0]
+
+    if current_status != "pending":
+        raise HTTPException(status_code=409, detail="Cannot change the status of a request that is already processed.")
+
+    update_query(
+        "UPDATE users SET user_type = 'director' WHERE id = ?",
+        (user_id,)
+    )
+
+    update_query(
+        "UPDATE promote_requests SET status = 'approved' WHERE id = ?",
+        (promote_request_id,)
+    )
+
+    return "Promotion request approved."
+
+
+def deny_promote_request(promote_request_id: int) -> str:
+    """
+    Deny a promotion request, updating the status in the promotion_requests table.
+
+    Args:
+        - promote_request_id: int
+
+    Returns:
+        - A message indicating the request was denied.
+    """
+
+    promote_request_data = read_query(
+        "SELECT status FROM promotion_requests WHERE id = ?",
+        (promote_request_id,)
+    )
+
+    if not promote_request_data:
+        raise HTTPException(status_code=404, detail=f"No promotion request with ID: {promote_request_id} exists.")
+
+    current_status = promote_request_data[0][0]
+
+    if current_status != "pending":
+        raise HTTPException(status_code=409, detail="Cannot change the status of a request that is already processed.")
+
+    update_query(
+        "UPDATE promotion_requests SET status = 'denied' WHERE id = ?",
+        (promote_request_id,)
+    )
+
+    return "Promotion request denied."
