@@ -48,8 +48,8 @@ def update_match_by_id(id: int, match: Match, x_token: str):
 @matches_router.post('/')
 def create_match(date: str = Query(description="To create a match, enter a date in the format: yyyy-mm-dd"),
                  format: str = Query("time or score"),
-                 player_profile_id1: int = Query(),
-                 player_profile_id2: int = Query(),
+                 nickname_1: str = Query(),
+                 nickname_2: str = Query(),
                  x_token: str = Header(default=None)):
 
     user = get_user_or_raise_401(x_token)
@@ -63,7 +63,7 @@ def create_match(date: str = Query(description="To create a match, enter a date 
     if date < CurrDateTime.CURRENT_DATE:
         return HTTPException(status_code=205, detail=f"You cannot create a match with a past date!")
 
-    match = matches_service.create(date=date, format=format, player_profile_id1=player_profile_id1, player_profile_id2=player_profile_id2)
+    match = matches_service.create(date=date, format=format, nickname_1=nickname_1, nickname_2=nickname_2)
     return match
 
 
