@@ -30,5 +30,3 @@ def users_id_exists(users_id: int, table_name: str) -> bool:
             f'SELECT users_id FROM {table_name} where users_id = ?',
             (users_id,)))
 
-
-# Add information related to dates for matches and tournaments!

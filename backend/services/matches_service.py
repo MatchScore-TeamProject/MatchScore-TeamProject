@@ -2,9 +2,14 @@ from database.database_connection import read_query, insert_query, update_query
 from models.match import Match
 
 
-def all():
-    data = read_query('''SELECT id, date, format, tournament_id, player_profile_id1, player_profile_id2, score_1, score_2
-                         FROM matches''')
+def all(search: str = None):
+    if search is None:
+        data = read_query('''SELECT id, date, format, tournament_id, player_profile_id1, player_profile_id2, score_1, score_2
+                             FROM matches''')
+    else:
+        data = read_query('''SELECT id, date, format, tournament_id, player_profile_id1, player_profile_id2, score_1, score_2
+                             FROM matches
+                             WHERE date LIKE ?''', (f"%{search}",))
 
     return (Match.from_query_result(*row) for row in data)
 
@@ -17,10 +22,9 @@ def get_by_id(id: int):
     return next((Match.from_query_result(*row) for row in data), None)
 
 
-# This method allow to update match parameters except for "id" and "date"!
 def update_by_id(old: Match, new: Match):
     merged = Match(id=old.id,
-                   date=old.date or old.date,
+                   date=new.date or old.date,
                    format=new.format or old.format,
                    tournament_id=new.tournament_id or old.tournament_id,
                    player_profile_id1=new.player_profile_id1 or old.player_profile_id1,
@@ -55,43 +59,19 @@ def exist(id: int):
     return any(read_query('''SELECT * FROM matches WHERE id = ?''', (id,)))
 
 
-def data_update(old: Match, new: Match):
-    merged = Match(id=old.id,
-                   date=new.date or old.date,
-                   format=new.format or old.format,
-                   tournament_id=old.tournament_id or old.tournament_id,
-                   player_profile_id1=old.player_profile_id1 or old.player_profile_id1,
-                   player_profile_id2=old.player_profile_id2 or old.player_profile_id2,
-                   score_1=old.score_1 or old.score_1,
-                   score_2=old.score_2 or old.score_2
-                   )
+def sort(result: list[Match], *, attribute="date", reverse=False):
+    if attribute == "date":
+        def sort_func(m: Match): return m.date
+    else:
+        def sort_func(m: Match): return m.id
 
-    update_query('''UPDATE matches SET 
-                        date = ?, 
-                        format = ?, 
-                        tournament_id = ?, 
-                        player_profile_id1 = ?,
-                        player_profile_id2 = ?,
-                        score_1 = ?,
-                        score_2 = ?
-                        WHERE id = ?''',
-
-                 (merged.date,
-                  merged.format,
-                  merged.tournament_id,
-                  merged.player_profile_id1,
-                  merged.player_profile_id2,
-                  merged.score_1,
-                  merged.score_2,
-                  merged.id))
-
-    return merged
+    return sorted(result, key=sort_func, reverse=reverse)
 
 
 def check_date_of_match(id: int):
     date_of_match = read_query('''SELECT date from matches 
                                   WHERE id = ?''', (id,))
-    return date_of_match
+    return date_of_match[0][0]
 
 
 def create(date, format, player_profile_id1, player_profile_id2):

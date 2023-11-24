@@ -5,13 +5,13 @@ from models.options import MatchFormat
 
 class Match(BaseModel):
     id: int | None = None
-    date: str #date
+    date: str  # date
     format: MatchFormat
     tournament_id: int | None = None
     player_profile_id1: int
     player_profile_id2: int
-    score_1: int | None = None
-    score_2: int | None = None
+    score_1: int | None = 0
+    score_2: int | None = 0
 
     @classmethod
     def from_query_result(cls, id, date, format, tournament_id, player_profile_id1, player_profile_id2, score_1, score_2):

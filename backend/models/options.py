@@ -1,4 +1,6 @@
 from enum import Enum
+from datetime import date
+CURR_DATE = date.today()
 
 
 class Role:
@@ -19,11 +21,6 @@ class MatchFormat(str, Enum):
     # def __str__(self):
     #     return str(self.value).capitalize()
 
-    # + ' limited': This concatenates the capitalized string with the literal string " limited."
-    # So, when you call str(format_time) or str(format_score),
-    # where format_time and format_score are instances of the MatchFormat enumeration,
-    # it will return a string that looks like "Time limited" or "Score limited."
-
 
 # class TournamentFormat(Enum):
 #     KNOCKOUT = "knockout"
@@ -31,3 +28,6 @@ class MatchFormat(str, Enum):
 
 #     def __str__(self):
 #         return str(self.value).capitalize()
+
+class CurrDateTime(str, Enum):
+    CURRENT_DATE = CURR_DATE
