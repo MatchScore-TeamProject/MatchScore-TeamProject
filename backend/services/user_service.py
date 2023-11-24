@@ -211,7 +211,7 @@ def create_promotion_request(user_id: int):
     """
 
     existing_request = read_query(
-        "SELECT id FROM promote_requests WHERE user_id = ? AND status = 'pending'",
+        "SELECT id FROM promote_requests WHERE users_id = ? AND status = 'pending'",
         (user_id,)
     )
 
@@ -219,7 +219,7 @@ def create_promotion_request(user_id: int):
         raise HTTPException(status_code=409, detail="A pending promotion request already exists for this user.")
 
     promotion_request_id = insert_query(
-        'INSERT INTO promote_requests (user_id, status) VALUES (?, ?)',
+        'INSERT INTO promote_requests (users_id, status) VALUES (?, ?)',
         (user_id, 'pending')
     )
 
@@ -238,7 +238,7 @@ def approve_promote_request(promote_request_id: int) -> str:
     """
 
     promote_request_data = read_query(
-        "SELECT status, user_id FROM promote_requests WHERE id = ?",
+        "SELECT status, users_id FROM promote_requests WHERE id = ?",
         (promote_request_id,)
     )
 

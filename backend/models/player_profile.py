@@ -3,9 +3,9 @@ from pydantic import BaseModel
 
 class PlayerProfile(BaseModel):  # OK
     id: int | None = None
-    nickname: str
-    full_name: str
-    country: str
+    nickname: str | None = None
+    full_name: str | None = None
+    country: str | None = None
     sports_club: str | None = None
 
     @classmethod
