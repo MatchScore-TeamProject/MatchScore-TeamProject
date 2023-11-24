@@ -6,23 +6,27 @@ from models.player_profile import PlayerProfile
 class Tournament(BaseModel):
     id: int | None = None
     title: str
+    date: str
+    participants: int
     tournament_format: str # Knockout or League
     match_format: str # time or score limited
     prize: int | None = None 
-    participants: list[PlayerProfile] = []
-    matches: list[Match] = []
-    
+    player_nicknames: list[str] = []
+    #matches ?
     @classmethod
     def from_query_result(
-        cls, id, title, tournament_format, match_format, prize, participants, matches
+        cls, id, title, date, participants, tournament_format, match_format, prize, player_nicknames
         ):
         
         return cls(
             id=id,
             title=title,
+            date=date,
+            participants=participants,
             tournament_format=tournament_format,
             match_format=match_format,
-            prize=prize
+            prize=prize,
+            player_nicknames=player_nicknames
         )
 
 class TournamentStatus(Enum):
