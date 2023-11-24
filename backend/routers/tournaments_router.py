@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Header, HTTPException, Query, Body
 from authentication.auth import find_by_id, get_user_or_raise_401, create_token
 from models.tournament import Tournament, TournamentFormat, TournamentStatus, TournamentType
-from services.user_service import is_director
+from services.user_service import is_director, is_admin
 from services import tournaments_service
 from typing import List
 
@@ -12,7 +12,6 @@ tournaments_router = APIRouter(prefix='/tournaments', tags=['Tournaments'])
 def create(
         title: str = Query(),
         date: str = Query(),
-        participants: int = Query(),
         tournament_formant: str = Query(),
         match_format: str = Query(),
         prize: str = Query(),
@@ -24,13 +23,13 @@ def create(
 
     user = get_user_or_raise_401(x_token)
 
-    if not is_director(user):
-        raise HTTPException(status_code=401, detail="Only directors can create tournaments")
+    if not any([is_director(user), is_admin(user)]):
+        raise HTTPException(status_code=401, detail="Only directors and admins can create tournaments")
     
-    new_tournament, player_nicknames = tournaments_service.create_tournament(title, date, participants, tournament_formant,match_format,
+    new_tournament, player_nicknames = tournaments_service.create_tournament(title, date, tournament_formant,match_format,
         prize, player_nicknames)
 
-    return f'Tournament created: {new_tournament}'
+    return new_tournament
 
 
 @tournaments_router.get('/')
@@ -68,7 +67,5 @@ def edit_tournament_by_id(tournament_id: int, x_token: str = Header(default=None
 
     user = get_user_or_raise_401(x_token)
 
-    if not is_director(user):
-        raise HTTPException(status_code=401, detail="Only directors can edit tournaments")
-    
-    
+    if not any([is_director(user), is_admin(user)]):
+        raise HTTPException(status_code=401, detail="Only directors and admins can edit tournaments")

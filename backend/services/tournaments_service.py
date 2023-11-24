@@ -1,13 +1,14 @@
+from fastapi import HTTPException
 from database.database_connection import read_query, read_query_additional, update_query, insert_query
 from models.tournament import Tournament, TournamentFormat, TournamentStatus, TournamentType
 from models.player_profile import PlayerProfile
 from typing import List
 from services.utilities import find_player_id_by_nickname
+from services.matches_service import create as create_match
 
 def create_tournament(
     title: str,
     date: str,
-    participants: int,
     tournament_format: str,
     match_format: str,
     prize: str,
@@ -17,12 +18,11 @@ def create_tournament(
     valid_player_counts = {4, 8, 16, 32, 64}
 
     if len(player_nicknames) not in valid_player_counts:
-        raise ValueError("Number of players must be 4, 8, 16, 32 or 64 for a knockout tournament")
+        raise HTTPException(status_code=400, detail="Number of players must be 4, 8, 16, 32 or 64 for a knockout tournament")
 
     tournament = Tournament(
         title=title,
         date=date,
-        participants=participants,
         tournament_format=tournament_format,
         match_format=match_format,
         prize=prize,
@@ -31,12 +31,11 @@ def create_tournament(
 
     generated_id = insert_query(
         """INSERT INTO tournaments(
-            title, date, participants, tournament_format, match_format, prize
-        ) VALUES(?, ?, ?, ?, ?, ?)""",
+            title, date, tournament_format, match_format, prize
+        ) VALUES(?, ?, ?, ?, ?)""",
         (
             title,
             date,
-            participants,
             tournament_format,
             match_format,
             prize,
@@ -53,12 +52,14 @@ def create_tournament(
                 (tournament.id, player_id),
             )
 
+    current_matches = []
+
     return tournament, player_nicknames
 
 
 def all():
     data = read_query(
-        '''SELECT id, title, date, participants, tournament_format, match_format, prize
+        '''SELECT id, title, date, tournament_format, match_format, prize
         FROM tournaments'''
     )
 
@@ -85,7 +86,7 @@ def all():
 
 def get_by_id(tournament_id: int):
     data = read_query(
-        '''SELECT id, title, date, participants, tournament_format, match_format, prize
+        '''SELECT id, title, date, tournament_format, match_format, prize
         FROM tournaments
         WHERE id = ?''',
         (tournament_id,)

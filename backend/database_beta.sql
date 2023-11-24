@@ -5,9 +5,6 @@ SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
 
 -- -----------------------------------------------------
--- Schema mydb
--- -----------------------------------------------------
--- -----------------------------------------------------
 -- Schema match_score_project
 -- -----------------------------------------------------
 
@@ -51,7 +48,7 @@ CREATE TABLE IF NOT EXISTS `match_score_project`.`player_profile` (
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
-AUTO_INCREMENT = 14
+AUTO_INCREMENT = 17
 DEFAULT CHARACTER SET = latin1;
 
 
@@ -84,7 +81,6 @@ CREATE TABLE IF NOT EXISTS `match_score_project`.`tournaments` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
   `title` VARCHAR(45) NOT NULL,
   `date` VARCHAR(45) NOT NULL,
-  `participants` INT(11) NOT NULL,
   `tournament_format` VARCHAR(45) NOT NULL,
   `match_format` VARCHAR(45) NOT NULL,
   `prize` INT(11) NULL DEFAULT NULL,
@@ -125,7 +121,7 @@ CREATE TABLE IF NOT EXISTS `match_score_project`.`matches` (
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
-AUTO_INCREMENT = 13
+AUTO_INCREMENT = 14
 DEFAULT CHARACTER SET = latin1;
 
 
@@ -174,16 +170,3 @@ DEFAULT CHARACTER SET = latin1;
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
-
-INSERT INTO `match_score_project`.`users` (`id`, `email`, `password`, `user_type`) VALUES ('7', 'admin@email.bg', '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', 'admin');
-INSERT INTO `match_score_project`.`users` (`id`, `email`, `password`, `user_type`) VALUES ('8', 'rado@email.bg', '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', 'user');
-INSERT INTO `match_score_project`.`users` (`id`, `email`, `password`, `user_type`) VALUES ('9', 'georgi@email.bg', '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', 'user');
-INSERT INTO `match_score_project`.`users` (`id`, `email`, `password`, `user_type`) VALUES ('10', 'deyan@email.bg', '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', 'user');
-
-INSERT INTO `match_score_project`.`player_profile` (`nickname`, `full_name`, `country`, `users_id`) VALUES ('rado', 'Radoslav Slavov', 'Bulgaria', '8');
-INSERT INTO `match_score_project`.`player_profile` (`nickname`, `full_name`, `country`, `users_id`) VALUES ('georgi', 'Georgi Dodekov', 'Bulgaria', '9');
-INSERT INTO `match_score_project`.`player_profile` (`nickname`, `full_name`, `country`, `users_id`) VALUES ('deyan', 'Deyan Totin', 'Bulgaria', '10');
-
-INSERT INTO `match_score_project`.`matches` (`date`, `format`, `score_1`, `score_2`, `player_profile_id1`, `player_profile_id2`) VALUES ('2023-11-17', 'time', '1', '1', '11', '12');
-INSERT INTO `match_score_project`.`matches` (`date`, `format`, `score_1`, `score_2`, `player_profile_id1`, `player_profile_id2`) VALUES ('2023-11-18', 'time', '2', '2', '12', '13');
-INSERT INTO `match_score_project`.`matches` (`date`, `format`, `player_profile_id1`, `player_profile_id2`) VALUES ('2023-11-25', 'time', '13', '11');
