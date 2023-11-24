@@ -26,10 +26,15 @@ def create(
     if not any([is_director(user), is_admin(user)]):
         raise HTTPException(status_code=401, detail="Only directors and admins can create tournaments")
     
-    new_tournament, player_nicknames = tournaments_service.create_tournament(title, date, tournament_formant,match_format,
-        prize, player_nicknames)
+    
+    new_tournament, player_nicknames= tournaments_service.create_tournament(
+        title, date, tournament_formant, match_format, prize, player_nicknames
+    )
 
-    return new_tournament
+    knockout_matches = tournaments_service.create_knockout_matches(player_nicknames, new_tournament)
+
+
+    return {"Tournament": new_tournament, "Player_nicknames": player_nicknames, "Matches": knockout_matches}
 
 
 @tournaments_router.get('/')

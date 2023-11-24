@@ -74,21 +74,6 @@ def check_date_of_match(id: int):
                                   WHERE id = ?''', (id,))
     return date_of_match[0][0]
 
-
-# def create(date, format, nickname_1, nickname_2):
-#     generated_id = insert_query('''INSERT INTO matches(date, format, player_profile_id1, player_profile_id2)
-#                                 VALUES(?,?,?,?)''',
-#                                 (date, format, nickname_1, nickname_2))
-#
-#     created_match = Match(id=generated_id,
-#                           date=date,
-#                           format=format,
-#                           nickname_1=nickname_1,
-#                           player_profile_id2=player_profile_id2
-#                           )
-#
-#     return created_match
-
 def create(date, format, nickname_1, nickname_2):
     player_profile_id_1 = find_player_id_by_nickname(nickname_1)
     player_profile_id_2 = find_player_id_by_nickname(nickname_2)
@@ -96,13 +81,6 @@ def create(date, format, nickname_1, nickname_2):
     generated_id = insert_query('''INSERT INTO matches(date, format, player_profile_id1, player_profile_id2) 
                                 VALUES(?,?,?,?)''',
                                 (date, format, player_profile_id_1, player_profile_id_2))
-
-    # created_match = Match(
-    #     date=date,
-    #     format=format,
-    #     player_profile_id1=player_profile_id_1,
-    #     player_profile_id2=player_profile_id_2
-    # )
 
     complete_match = get_by_id(generated_id)
 

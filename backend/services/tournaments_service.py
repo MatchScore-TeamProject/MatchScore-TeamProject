@@ -5,6 +5,8 @@ from models.player_profile import PlayerProfile
 from typing import List
 from services.utilities import find_player_id_by_nickname
 from services.matches_service import create as create_match
+import random
+
 
 def create_tournament(
     title: str,
@@ -44,6 +46,10 @@ def create_tournament(
 
     tournament.id = generated_id
 
+    random.shuffle(player_nicknames)
+
+    matches = create_knockout_matches(player_nicknames, tournament)
+
     for player_nickname in player_nicknames:
         player_id = find_player_id_by_nickname(player_nickname)
         if player_id is not None:
@@ -52,9 +58,38 @@ def create_tournament(
                 (tournament.id, player_id),
             )
 
-    current_matches = []
 
-    return tournament, player_nicknames
+    return tournament, player_nicknames, matches
+
+
+def create_knockout_matches(player_nicknames: List[str], tournament: Tournament) :
+
+    pairs = [(player_nicknames[i], player_nicknames[i + 1]) for i in range(len(player_nicknames)//2)]
+
+    
+    for pair in pairs:
+        create_and_insert_match(tournament, pair[0], pair[1])
+
+    return pairs
+
+
+def create_and_insert_match(tournament: Tournament, player1: str, player2: str):
+
+    player_id1 = find_player_id_by_nickname(player1)
+    player_id2 = find_player_id_by_nickname(player2)
+
+    create_match(tournament.date, tournament.match_format, player_id1, player_id2)
+
+
+
+
+
+
+
+
+
+
+
 
 
 def all():
