@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 
-class PlayerProfile(BaseModel):  # OK
+class PlayerProfile(BaseModel):
     id: int | None = None
     nickname: str | None = None
     full_name: str | None = None

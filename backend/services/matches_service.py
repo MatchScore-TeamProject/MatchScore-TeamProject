@@ -74,6 +74,7 @@ def check_date_of_match(id: int):
                                   WHERE id = ?''', (id,))
     return date_of_match[0][0]
 
+
 def create(date, format, nickname_1, nickname_2):
     player_profile_id_1 = find_player_id_by_nickname(nickname_1)
     player_profile_id_2 = find_player_id_by_nickname(nickname_2)

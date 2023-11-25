@@ -2,7 +2,7 @@ from database.database_connection import read_query, read_query_additional, upda
 from fastapi import HTTPException
 from models.user import User
 from authentication.auth import find_by_email, find_by_id
-from models.options import Role
+from models.options import Role, CurrentStatus
 from models.requests import LinkRequest, PromoteRequest
 from services import utilities
 
@@ -28,10 +28,10 @@ def create(email: str, password: str) -> User | None:
     password = _hash_password(password)
 
     generated_id = insert_query(
-        'INSERT INTO users(email, password, user_type) VALUES (?,?,?)',
-        (email, password, Role.USER))
+        '''INSERT INTO users(email, password, user_type) VALUES (?,?,?)''',
+        (email, password, Role.USER.value))
 
-    return User(id=generated_id, email=email, password='', role=Role.USER)
+    return User(id=generated_id, email=email, password='', role=Role.USER.value)
 
 
 def delete_user(id: int):
@@ -64,22 +64,21 @@ def is_admin(user: User):
     """
     return user.user_type == Role.ADMIN
 
-
-def all_users():
-    data = read_query(
-        '''SELECT id, email, user_type, player_profile_id
-        from users''')
-    if data is None:
-        return None
-
-    return (User.from_query_result_no_password(*row) for row in data)
+#  ............There is no need for this functionality at this time............
+# def all_users():
+#     data = read_query(
+#         '''SELECT id, email, user_type FROM users''')
+#     if data is None:
+#         return None
+#
+#     return (User.from_query_result_no_password(*row) for row in data)
 
 
 def get_by_id(id: int):
     data = read_query(
         '''SELECT id, email, user_type, player_profile_id
-        from users
-        where id = ?''', (id,))
+        FROM users
+        WHERE id = ?''', (id,))
     return next((User.from_query_result_no_password(*row) for row in data), None)
 
 
@@ -94,7 +93,7 @@ def find_by_id_admin(id: int) -> User | None:
     """
 
     data = read_query(
-        'SELECT id, email, user_type, player_profile_id FROM users WHERE id = ?',
+        '''SELECT id, email, user_type FROM users WHERE id = ?''',
         (id,))
 
     return next((User.from_query_result_no_password(*row) for row in data), None)
@@ -122,16 +121,16 @@ def create_link_request(user_id: int, player_profile_id: int):
 
     """
     profile_link_status = read_query(
-        "SELECT users_id FROM player_profile WHERE id = ?",
+        '''SELECT users_id FROM player_profile WHERE id = ?''',
         (player_profile_id,)
     )
 
     if profile_link_status and profile_link_status[0][0] and profile_link_status[0][0] != user_id:
         raise HTTPException(status_code=409, detail="This profile is already linked to another user.")
 
-    link_request_id = insert_query('INSERT INTO link_requests (user_id, player_profile_id, status) VALUES (?, ?, ?)',
-                                   (user_id, player_profile_id, 'pending'))
-    return LinkRequest(id=link_request_id, user_id=user_id, player_profile_id=player_profile_id, status='pending')
+    link_request_id = insert_query('''INSERT INTO link_requests (user_id, player_profile_id, status) VALUES (?, ?, ?)''',
+                                   (user_id, player_profile_id, CurrentStatus.PENDING.value))
+    return LinkRequest(id=link_request_id, user_id=user_id, player_profile_id=player_profile_id, status=CurrentStatus.PENDING.value)
 
 
 def approve_link_request(link_request_id: int) -> str:
@@ -146,7 +145,7 @@ def approve_link_request(link_request_id: int) -> str:
     """
 
     link_request_data = read_query(
-        "SELECT status, user_id, player_profile_id FROM link_requests WHERE id = ?",
+        '''SELECT status, user_id, player_profile_id FROM link_requests WHERE id = ?''',
         (link_request_id,)
     )
 
@@ -155,7 +154,7 @@ def approve_link_request(link_request_id: int) -> str:
 
     current_status, user_id, player_profile_id = link_request_data[0]
 
-    if current_status == "denied":
+    if current_status == CurrentStatus.DENIED.value:
         raise HTTPException(status_code=404, detail="Status cannot be changed from approved to denied and vice versa.")
 
     update_query(
@@ -164,8 +163,8 @@ def approve_link_request(link_request_id: int) -> str:
     )
 
     update_query(
-        "UPDATE link_requests SET status = 'approved' WHERE id = ?",
-        (link_request_id,)
+        "UPDATE link_requests SET status = ? WHERE id = ?",
+        (CurrentStatus.APPROVED.value, link_request_id,)
     )
 
     return "Link request approved."
@@ -188,13 +187,13 @@ def deny_link_request(link_request_id: int) -> str:
 
     current_status = link_request_data[0][0]
 
-    if current_status == "approved":
+    if current_status == CurrentStatus.APPROVED.value:
         raise HTTPException(status_code=404, detail="Status cannot be changed from denied to approved and vice versa.")
 
     if not utilities.id_exists(link_request_id, "link_requests"):
         raise HTTPException(status_code=404, detail=f"No link request with ID: {link_request_id} exists.")
 
-    update_query("UPDATE link_requests SET status = ? WHERE id = ?", ("denied", link_request_id))
+    update_query("UPDATE link_requests SET status = ? WHERE id = ?", (CurrentStatus.DENIED.value, link_request_id))
 
     return "Link request denied"
 
@@ -211,8 +210,8 @@ def create_promotion_request(user_id: int):
     """
 
     existing_request = read_query(
-        "SELECT id FROM promote_requests WHERE users_id = ? AND status = 'pending'",
-        (user_id,)
+        "SELECT id FROM promote_requests WHERE users_id = ? AND status = ?",
+        (user_id, CurrentStatus.PENDING.value)
     )
 
     if existing_request:
@@ -220,10 +219,10 @@ def create_promotion_request(user_id: int):
 
     promotion_request_id = insert_query(
         'INSERT INTO promote_requests (users_id, status) VALUES (?, ?)',
-        (user_id, 'pending')
+        (user_id, CurrentStatus.PENDING.value)
     )
 
-    return PromoteRequest(id=promotion_request_id, user_id=user_id, status="pending")
+    return PromoteRequest(id=promotion_request_id, user_id=user_id, status=CurrentStatus.PENDING.value)
 
 
 def approve_promote_request(promote_request_id: int) -> str:
@@ -247,17 +246,17 @@ def approve_promote_request(promote_request_id: int) -> str:
 
     current_status, user_id = promote_request_data[0]
 
-    if current_status != "pending":
+    if current_status != CurrentStatus.PENDING.value:
         raise HTTPException(status_code=409, detail="Cannot change the status of a request that is already processed.")
 
     update_query(
-        "UPDATE users SET user_type = 'director' WHERE id = ?",
-        (user_id,)
+        "UPDATE users SET user_type = ? WHERE id = ?",
+        (user_id, Role.DIRECTOR.value)
     )
 
     update_query(
-        "UPDATE promote_requests SET status = 'approved' WHERE id = ?",
-        (promote_request_id,)
+        "UPDATE promote_requests SET status = ? WHERE id = ?",
+        (CurrentStatus.APPROVED.value, promote_request_id,)
     )
 
     return "Promotion request approved."
@@ -284,12 +283,12 @@ def deny_promote_request(promote_request_id: int) -> str:
 
     current_status = promote_request_data[0][0]
 
-    if current_status != "pending":
+    if current_status != CurrentStatus.PENDING.value:
         raise HTTPException(status_code=409, detail="Cannot change the status of a request that is already processed.")
 
     update_query(
-        "UPDATE promotion_requests SET status = 'denied' WHERE id = ?",
-        (promote_request_id,)
+        "UPDATE promotion_requests SET status = ? WHERE id = ?",
+        (CurrentStatus.DENIED.value, promote_request_id,)
     )
 
     return "Promotion request denied."

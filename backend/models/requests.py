@@ -1,14 +1,15 @@
 from pydantic import BaseModel
+from models.options import CurrentStatus
 
 
 class LinkRequest(BaseModel):
     id: int | None = None
     user_id: int
     player_profile_id: int
-    status: str = "pending"
+    status: str = CurrentStatus.PENDING
 
 
 class PromoteRequest(BaseModel):
     id: int | None = None
     user_id: int
-    status: str = "pending"
+    status: CurrentStatus.PENDING

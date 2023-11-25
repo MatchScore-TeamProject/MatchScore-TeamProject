@@ -6,7 +6,7 @@ class User(BaseModel):
     id: int | None = None
     email: str
     password: str
-    user_type: str | None = 'user'  # (user, admin, director)
+    user_type: str | None = Role.USER  # (user, admin, director)
     player_profile_id: int | None = None  # Option to associate with a player profile
 
     @classmethod
@@ -15,7 +15,7 @@ class User(BaseModel):
             id=id,
             email=email,
             password=password,
-            user_type=user_type or 'user',
+            user_type=user_type or Role.USER,
             player_profile_id=player_profile_id
         )
 
@@ -25,7 +25,7 @@ class User(BaseModel):
             id=id,
             email=email,
             password='',
-            user_type=user_type or 'user',
+            user_type=user_type or Role.USER,
             player_profile_id=player_profile_id
         )
 
@@ -39,4 +39,4 @@ class CreateUserModel(BaseModel):
     id: int | None = None
     email: str
     password: str
-    user_type: str | None = 'user'
+    user_type: str | None = Role.USER

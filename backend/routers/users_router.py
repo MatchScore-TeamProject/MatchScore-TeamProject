@@ -2,7 +2,7 @@ from fastapi import APIRouter, Header, HTTPException
 from authentication.auth import find_by_id, get_user_or_raise_401, create_token
 from models.user import User, LoginData
 from services import user_service, utilities
-
+from models.options import Role
 users_router = APIRouter(prefix='/users', tags=['Users'])
 
 
@@ -37,29 +37,29 @@ def login(data: LoginData):
         token = create_token(user)
         return {'token': token}
     else:
-        raise HTTPException(status_code=400, detail='Invalid login data.')
+        raise HTTPException(status_code=400, detail="Invalid login data.")
 
-
-@users_router.get('/')
-def all_users(x_token: str = Header(default=None)):
-    """ Used for admins to see a list with all users.
-
-    Args:
-        - JWT token
-
-    Returns:
-        - list of users(id, username, role)
-    """
-
-    if x_token == None:
-        raise HTTPException(status_code=401, detail='You must be logged in to view a list with users.')
-
-    user = get_user_or_raise_401(x_token)
-
-    if not user_service.is_admin(user):
-        raise HTTPException(status_code=401, detail='Only admins can view a list with all users.')
-
-    return user_service.all_users()
+#  ............There is no need for this functionality at this time............
+# @users_router.get('/')
+# def all_users(x_token: str = Header(default=None)):
+#     """ Used for admins to see a list with all users.
+#
+#     Args:
+#         - JWT token
+#
+#     Returns:
+#         - list of users(id, username, role)
+#     """
+#
+#     if x_token is None:
+#         raise HTTPException(status_code=401, detail="You must be logged in to view a list with users.")
+#
+#     user = get_user_or_raise_401(x_token)
+#
+#     if not user_service.is_admin(user):
+#         raise HTTPException(status_code=401, detail="Only admins can view a list with all users.")
+#
+#     return user_service.all_users()
 
 
 @users_router.get('/{id}')
@@ -74,16 +74,16 @@ def user_info(id: int, x_token: str = Header(default=None)):
         - user(id, username, user_type)
     """
 
-    if x_token == None:
-        raise HTTPException(status_code=401, detail='You must be logged in and be an admin to view accounts.')
+    if x_token is None:
+        raise HTTPException(status_code=401, detail="You must be logged in and be an admin to view accounts.")
 
     user = get_user_or_raise_401(x_token)
 
     if not user_service.is_admin(user):
-        raise HTTPException(status_code=401, detail='Only admins can view accounts.')
+        raise HTTPException(status_code=401, detail="Only admins can view accounts.")
 
     if not utilities.id_exists(id, 'users'):
-        raise HTTPException(status_code=404, detail=f'User with id {id} does not exist.')
+        raise HTTPException(status_code=404, detail=f"User with id {id} does not exist.")
 
     return user_service.find_by_id_admin(id)
 
@@ -100,19 +100,19 @@ def edit_users_role(new_user: User, id: int, x_token: str = Header(default=None)
         - Edited user
     """
 
-    if x_token == None:
-        raise HTTPException(status_code=401, detail='You must be logged in and be an admin to edit users roles.')
+    if x_token is None:
+        raise HTTPException(status_code=401, detail="You must be logged in and be an admin to edit users roles.")
 
     user = get_user_or_raise_401(x_token)
 
     if not user_service.is_admin(user):
-        raise HTTPException(status_code=401, detail='Only admins can edit roles.')
+        raise HTTPException(status_code=401, detail="Only admins can edit roles.")
 
     if not utilities.id_exists(id, 'users'):
-        raise HTTPException(status_code=404, detail=f'User with id {id} does not exist.')
+        raise HTTPException(status_code=404, detail=f"User with id {id} does not exist.")
 
-    if new_user.user_type != 'admin' and new_user.user_type != 'user':
-        raise HTTPException(status_code=404, detail='Unknown role.')
+    if new_user.user_type != Role.ADMIN and new_user.user_type != Role.USER:
+        raise HTTPException(status_code=404, detail="Unknown role.")
 
     old_user = find_by_id(id)
 
@@ -131,19 +131,19 @@ def delete_user(id: int, x_token: str = Header(default=None)):
         - Deleted user
     """
 
-    if x_token == None:
-        raise HTTPException(status_code=401, detail='You must be logged in and be an admin to delete a user.')
+    if x_token is None:
+        raise HTTPException(status_code=401, detail="You must be logged in and be an admin to delete a user.")
 
     user = get_user_or_raise_401(x_token)
 
     if not utilities.id_exists(id, 'users'):
-        raise HTTPException(status_code=404, detail=f'User with id {id} does not exist.')
+        raise HTTPException(status_code=404, detail=f"User with id {id} does not exist.")
 
     if user_service.is_admin(user):
         user_service.delete_user(id)
 
     if not user_service.is_admin(user):
-        raise HTTPException(status_code=401, detail='You must be admin to delete a user.')
+        raise HTTPException(status_code=401, detail="You must be admin to delete a user.")
 
     return {'User deleted.'}
 
@@ -169,7 +169,7 @@ def send_link_request(user_id: int, player_profile_id: int, x_token: str = Heade
         raise HTTPException(status_code=401, detail="Can't send request for another user.")
 
     if not utilities.id_exists(user_id, 'users'):
-        raise HTTPException(status_code=404, detail=f'User with id {user_id} does not exist.')
+        raise HTTPException(status_code=404, detail=f"User with id {user_id} does not exist.")
 
     user_service.create_link_request(user_id, player_profile_id)
 
