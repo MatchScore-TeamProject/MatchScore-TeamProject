@@ -61,24 +61,18 @@ def create_tournament(
 
     return tournament, player_nicknames, matches
 
+def create_knockout_matches(player_nicknames: List[str], tournament: Tournament):
+    pairs = [(player_nicknames[i], player_nicknames[i + 1]) for i in range(0, len(player_nicknames), 2)]
 
-def create_knockout_matches(player_nicknames: List[str], tournament: Tournament) :
-
-    pairs = [(player_nicknames[i], player_nicknames[i + 1]) for i in range(len(player_nicknames)//2)]
-
-    
     for pair in pairs:
         create_and_insert_match(tournament, pair[0], pair[1])
 
-    return pairs
-
+    return tournament, pairs
 
 def create_and_insert_match(tournament: Tournament, player1: str, player2: str):
 
-    player_id1 = find_player_id_by_nickname(player1)
-    player_id2 = find_player_id_by_nickname(player2)
-
-    create_match(tournament.date, tournament.match_format, player_id1, player_id2)
+    
+    create_match(tournament.date, tournament.match_format, player1, player2)
 
 
 

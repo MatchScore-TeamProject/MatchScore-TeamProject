@@ -25,3 +25,9 @@ class Match(BaseModel):
             score_1=score_1,
             score_2=score_2
         )
+
+class MatchResponse(BaseModel):
+    player1: str
+    player2: str
+    Date: str
+    Format: str

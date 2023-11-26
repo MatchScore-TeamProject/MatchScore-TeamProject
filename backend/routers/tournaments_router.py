@@ -4,6 +4,8 @@ from models.tournament import Tournament, TournamentFormat, TournamentStatus, To
 from services.user_service import is_director, is_admin
 from services import tournaments_service
 from typing import List
+from models.match import MatchResponse
+
 
 tournaments_router = APIRouter(prefix='/tournaments', tags=['Tournaments'])
 
@@ -12,7 +14,7 @@ tournaments_router = APIRouter(prefix='/tournaments', tags=['Tournaments'])
 def create(
         title: str = Query(),
         date: str = Query(),
-        tournament_formant: str = Query(),
+        tournament_format: str = Query(),
         match_format: str = Query(),
         prize: str = Query(),
         player_nicknames: List[str] = Body(),
@@ -26,15 +28,17 @@ def create(
     if not any([is_director(user), is_admin(user)]):
         raise HTTPException(status_code=401, detail="Only directors and admins can create tournaments")
     
-    
-    new_tournament, player_nicknames= tournaments_service.create_tournament(
-        title, date, tournament_formant, match_format, prize, player_nicknames
+
+    tournament_result = tournaments_service.create_tournament(
+        title, date, tournament_format, match_format, prize, player_nicknames
     )
 
-    knockout_matches = tournaments_service.create_knockout_matches(player_nicknames, new_tournament)
+    new_tournament = tournament_result[0]  
+    knockout_matches = tournament_result[1]  
+    
+   
+    return {"Tournament": new_tournament, "Matches": knockout_matches}
 
-
-    return {"Tournament": new_tournament, "Player_nicknames": player_nicknames, "Matches": knockout_matches}
 
 
 @tournaments_router.get('/')
