@@ -1,13 +1,17 @@
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Query
 from authentication.auth import find_by_id, get_user_or_raise_401, create_token
 from models.user import User, LoginData
 from services import user_service, utilities
 from models.options import Role
+from pydantic import EmailStr
+
+
 users_router = APIRouter(prefix='/users', tags=['Users'])
 
 
 @users_router.post('/register')
-def register(data: LoginData):
+def register(email: EmailStr = Query(),
+             password: str = Query()):
     """ Used for registering new users.
 
     Args:
@@ -17,13 +21,14 @@ def register(data: LoginData):
         - Registered user
     """
 
-    user = user_service.create(data.email, data.password)
+    user = user_service.create(email, password)
 
-    return user or HTTPException(status_code=400, detail=f'Email {data.email} is already taken.')
+    return user or HTTPException(status_code=400, detail=f'Email {email} is already taken.')
 
 
 @users_router.post('/login')
-def login(data: LoginData):
+def login(email: EmailStr = Query(),
+          password: str = Query()):
     """ Used for logging in.
 
     Args:
@@ -32,7 +37,7 @@ def login(data: LoginData):
     Returns:
         - JWT token
     """
-    user = user_service.try_login(data.email, data.password)
+    user = user_service.try_login(email, password)
     if user:
         token = create_token(user)
         return {'token': token}

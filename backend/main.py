@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from routers.matches_router import matches_router
 from routers.player_profile_router import player_profile_router
-# from routers.tournaments_router import tournaments_router
 from routers.users_router import users_router
 from routers.tournaments_router import tournaments_router
 
