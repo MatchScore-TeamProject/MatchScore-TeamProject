@@ -2,9 +2,10 @@ from database.database_connection import read_query, read_query_additional, upda
 from fastapi import HTTPException
 from models.user import User
 from authentication.auth import find_by_email, find_by_id
-from models.options import Role, CurrentStatus
+from models.options import Role, CurrentStatus, EmailType
 from models.requests import LinkRequest, PromoteRequest
 from services import utilities
+from services.emails import send_email_for_requests
 
 
 def _hash_password(password: str):
@@ -63,6 +64,7 @@ def is_admin(user: User):
         - True/False
     """
     return user.user_type == Role.ADMIN
+
 
 #  ............There is no need for this functionality at this time............
 # def all_users():
@@ -128,9 +130,11 @@ def create_link_request(user_id: int, player_profile_id: int):
     if profile_link_status and profile_link_status[0][0] and profile_link_status[0][0] != user_id:
         raise HTTPException(status_code=409, detail="This profile is already linked to another user.")
 
-    link_request_id = insert_query('''INSERT INTO link_requests (user_id, player_profile_id, status) VALUES (?, ?, ?)''',
-                                   (user_id, player_profile_id, CurrentStatus.PENDING.value))
-    return LinkRequest(id=link_request_id, user_id=user_id, player_profile_id=player_profile_id, status=CurrentStatus.PENDING.value)
+    link_request_id = insert_query(
+        '''INSERT INTO link_requests (user_id, player_profile_id, status) VALUES (?, ?, ?)''',
+        (user_id, player_profile_id, CurrentStatus.PENDING.value))
+    return LinkRequest(id=link_request_id, user_id=user_id, player_profile_id=player_profile_id,
+                       status=CurrentStatus.PENDING.value)
 
 
 def approve_link_request(link_request_id: int) -> str:
@@ -167,6 +171,11 @@ def approve_link_request(link_request_id: int) -> str:
         (CurrentStatus.APPROVED.value, link_request_id,)
     )
 
+    user_email = read_query("SELECT email FROM users WHERE id=?", (user_id,))[0][0]
+
+
+    send_email_for_requests(receiver=user_email, conformation=CurrentStatus.APPROVED.value, email_type=EmailType.LINK_REQUEST.value)
+
     return "Link request approved."
 
 
@@ -194,6 +203,11 @@ def deny_link_request(link_request_id: int) -> str:
         raise HTTPException(status_code=404, detail=f"No link request with ID: {link_request_id} exists.")
 
     update_query("UPDATE link_requests SET status = ? WHERE id = ?", (CurrentStatus.DENIED.value, link_request_id))
+
+    user_id = read_query("SELECT user_id FROM link_requests WHERE id=?", (link_request_id,))[0][0]
+    user_email = read_query("SELECT email FROM users WHERE id=?", (user_id,))[0][0]
+
+    send_email_for_requests(receiver=user_email, conformation=CurrentStatus.DENIED.value, email_type=EmailType.LINK_REQUEST.value)
 
     return "Link request denied"
 
@@ -259,6 +273,10 @@ def approve_promote_request(promote_request_id: int) -> str:
         (CurrentStatus.APPROVED.value, promote_request_id,)
     )
 
+    user_email = read_query("SELECT email FROM users WHERE id=?", (user_id,))[0][0]
+
+    send_email_for_requests(receiver=user_email, conformation=CurrentStatus.APPROVED.value, email_type=EmailType.PROMOTE_REQUEST.value)
+
     return "Promotion request approved."
 
 
@@ -290,5 +308,10 @@ def deny_promote_request(promote_request_id: int) -> str:
         "UPDATE promotion_requests SET status = ? WHERE id = ?",
         (CurrentStatus.DENIED.value, promote_request_id,)
     )
+
+    user_id = read_query("SELECT user_id FROM link_requests WHERE id=?", (promote_request_id,))[0][0]
+    user_email = read_query("SELECT email FROM users WHERE id=?", (user_id,))[0][0]
+
+    send_email_for_requests(receiver=user_email, conformation=CurrentStatus.DENIED.value, email_type=EmailType.PROMOTE_REQUEST.value)
 
     return "Promotion request denied."
