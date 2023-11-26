@@ -1,5 +1,6 @@
 from enum import Enum
 from datetime import date
+
 CURR_DATE = date.today()
 
 
@@ -37,3 +38,11 @@ class CurrentStatus(str, Enum):
     PENDING = "pending"
     DENIED = "denied"
     APPROVED = "approved"
+
+
+class EmailType(str, Enum):
+    LINK_REQUEST = "link_request"
+    PROMOTE_REQUEST = "promote_request"
+    ADDED_TO_TOURNAMENT = "tournament"
+    ADDED_TO_MATCH = "match_add"
+    MATCH_CHANGED = "match_changed"
