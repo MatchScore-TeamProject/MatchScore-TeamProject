@@ -11,7 +11,7 @@ class Tournament(BaseModel):
     match_format: str # time or score limited
     prize: int | None = None 
     player_nicknames: list[str] = []
-    #matches ?
+    
     @classmethod
     def from_query_result(
         cls, id, title, date, tournament_format, match_format, prize, player_nicknames
@@ -24,7 +24,7 @@ class Tournament(BaseModel):
             tournament_format=tournament_format,
             match_format=match_format,
             prize=prize,
-            player_nicknames=player_nicknames
+            player_nicknames=player_nicknames,
         )
 
 class TournamentStatus(Enum):
@@ -46,3 +46,25 @@ class TournamentType(BaseModel):
 
     def is_knockout(self):
         return self.type == TournamentFormat.KNOCKOUT
+    
+
+class TournamentResponse(BaseModel):
+    title: str
+    date: str
+    tournament_format: str
+    match_format: str
+    prize: str
+    player_nicknames: list[str] = []
+    matches: list[str] =[]
+
+    @classmethod
+    def from_query_result(cls, tournament, player_nicknames, matches):
+        return cls(
+            title=tournament.title,
+            date=tournament.date,
+            tournament_format=tournament.tournament_format,
+            match_format=tournament.match_format,
+            prize=tournament.prize,
+            player_nicknames=player_nicknames,
+            matches=matches
+        )

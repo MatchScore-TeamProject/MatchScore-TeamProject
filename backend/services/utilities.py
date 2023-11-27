@@ -35,9 +35,9 @@ def find_player_id_by_nickname(nickname: str):
 
     result = read_query("SELECT id FROM player_profile WHERE nickname = ?", (nickname,))
     
-    if result:
-        return result[0][0]
-    else:
-        return None
+    return result[0][0] if result else None
 
-# Add information related to dates for matches and tournaments!
+
+def find_player_nickname_by_id(player_id: int):
+    result = read_query("SELECT nickname FROM players WHERE id = ?", (player_id,))
+    return result[0][0] if result else None
