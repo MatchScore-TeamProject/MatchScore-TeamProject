@@ -75,13 +75,30 @@ def check_date_of_match(id: int):
     return date_of_match[0][0]
 
 
-def create(date, format, nickname_1, nickname_2):
-    player_profile_id_1 = find_player_id_by_nickname(nickname_1)
-    player_profile_id_2 = find_player_id_by_nickname(nickname_2)
+# def create(date, format, nickname_1, nickname_2):
+#     player_profile_id_1 = find_player_id_by_nickname(nickname_1)
+#     player_profile_id_2 = find_player_id_by_nickname(nickname_2)
+#
+#     generated_id = insert_query('''INSERT INTO matches(date, format, player_profile_id1, player_profile_id2)
+#                                 VALUES(?,?,?,?)''',
+#                                 (date, format, player_profile_id_1, player_profile_id_2))
+#
+#     complete_match = get_by_id(generated_id)
+#
+#     return complete_match
 
-    generated_id = insert_query('''INSERT INTO matches(date, format, player_profile_id1, player_profile_id2) 
-                                VALUES(?,?,?,?)''',
-                                (date, format, player_profile_id_1, player_profile_id_2))
+def create(date, format, tournament_id, nickname_1=None, nickname_2=None):
+    player_profile_id_1 = None
+    player_profile_id_2 = None
+
+    if nickname_1:
+        player_profile_id_1 = find_player_id_by_nickname(nickname_1)
+    if nickname_2:
+        player_profile_id_2 = find_player_id_by_nickname(nickname_2)
+
+    generated_id = insert_query('''INSERT INTO matches(date, format, tournament_id, player_profile_id1, player_profile_id2) 
+                                VALUES(?,?,?,?,?)''',
+                                (date, format, tournament_id, player_profile_id_1, player_profile_id_2))
 
     complete_match = get_by_id(generated_id)
 

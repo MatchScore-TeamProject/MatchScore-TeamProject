@@ -5,6 +5,9 @@ SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
 
 -- -----------------------------------------------------
+-- Schema mydb
+-- -----------------------------------------------------
+-- -----------------------------------------------------
 -- Schema match_score_project
 -- -----------------------------------------------------
 
@@ -48,7 +51,7 @@ CREATE TABLE IF NOT EXISTS `match_score_project`.`player_profile` (
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
-AUTO_INCREMENT = 17
+AUTO_INCREMENT = 21
 DEFAULT CHARACTER SET = latin1;
 
 
@@ -97,10 +100,11 @@ CREATE TABLE IF NOT EXISTS `match_score_project`.`matches` (
   `date` VARCHAR(45) NOT NULL,
   `format` VARCHAR(45) NOT NULL,
   `tournament_id` INT(11) NULL DEFAULT NULL,
-  `score_1` INT(11) NULL DEFAULT 0,
-  `score_2` INT(11) NULL DEFAULT 0,
-  `player_profile_id1` INT(11) NOT NULL,
-  `player_profile_id2` INT(11) NOT NULL,
+  `score_1` INT(11) NULL,
+  `score_2` INT(11) NULL,
+  `player_profile_id1` INT(11) NULL,
+  `player_profile_id2` INT(11) NULL,
+  `winner` VARCHAR(45) NULL,
   PRIMARY KEY (`id`),
   INDEX `fk_match_tournament1_idx` (`tournament_id` ASC) VISIBLE,
   INDEX `fk_matches_player_profile1_idx` (`player_profile_id1` ASC) VISIBLE,
