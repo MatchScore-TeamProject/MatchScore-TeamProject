@@ -39,5 +39,5 @@ def find_player_id_by_nickname(nickname: str):
 
 
 def find_player_nickname_by_id(player_id: int):
-    result = read_query("SELECT nickname FROM players WHERE id = ?", (player_id,))
+    result = read_query("SELECT nickname FROM player_profile WHERE id = ?", (player_id,))
     return result[0][0] if result else None

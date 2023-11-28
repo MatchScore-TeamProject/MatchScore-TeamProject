@@ -51,3 +51,12 @@ def edit_player_profile(player_profile_id: int, new_data: PlayerProfile, user_id
     update_query(update_query_str, update_params)
 
     return "Player profile updated successfully."
+
+
+def find_non_existing_players(player_profiles: list[str]) -> list[str]:
+    existing_players = read_query("""SELECT nickname FROM player_profile""")
+
+    non_existing_players = [nickname for nickname in player_profiles if (nickname,) not in existing_players]
+
+    return non_existing_players if non_existing_players else None
+    

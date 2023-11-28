@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Header, HTTPException, Query, Body
 from authentication.auth import find_by_id, get_user_or_raise_401, create_token
-from models.tournament import Tournament, TournamentFormat, TournamentStatus, TournamentType
+from models.tournament import Tournament, TournamentFormat, TournamentStatus, TournamentType, TournamentResponse
 from services.user_service import is_director, is_admin
 from services import tournaments_service
 from typing import List
@@ -33,12 +33,8 @@ def create(
         title, date, tournament_format, match_format, prize, player_nicknames
     )
 
-    new_tournament = tournament_result[0]  
-    knockout_matches = tournament_result[1]  
-    
-   
-    return {"Tournament": new_tournament, "Matches": knockout_matches}
-
+    new_tournament, player_nicknames = tournament_result 
+    return {"Tournament": new_tournament}
 
 
 @tournaments_router.get('/')
@@ -78,3 +74,11 @@ def edit_tournament_by_id(tournament_id: int, x_token: str = Header(default=None
 
     if not any([is_director(user), is_admin(user)]):
         raise HTTPException(status_code=401, detail="Only directors and admins can edit tournaments")
+    
+
+@tournaments_router.get('/{id}/matches')
+def get_all_matches_by_tournament(tournament_id: int, x_token: str = Header(default=None)):
+    pass
+
+
+
