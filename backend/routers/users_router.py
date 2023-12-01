@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Header, HTTPException, Query
-from authentication.auth import find_by_id, get_user_or_raise_401, create_token
+from authentication.auth import find_by_id, get_user_or_raise_401, create_token, find_by_email
 from models.user import User, LoginData
 from services import user_service, utilities
 from models.options import Role
 from pydantic import EmailStr
 
+from services.utilities import find_player_id_by_nickname
 
 users_router = APIRouter(prefix='/users', tags=['Users'])
 
@@ -154,18 +155,24 @@ def delete_user(id: int, x_token: str = Header(default=None)):
 
 
 @users_router.post("/link-request")
-def send_link_request(user_id: int, player_profile_id: int, x_token: str = Header(default=None)):
+def send_link_request(user_email: str, player_profile_nickname: str, x_token: str = Header(default=None)):
     """ Creates a link request. Only admins can approve or deny requests.
 
     Args:
-        user_id: int
-        player_profile_id: int
+        user_email: str
+        player_profile_nickname:
         x_token: JTW token
 
     Returns:
         A message about the sending of the request.
 
     """
+
+    if get_user_or_raise_401(x_token).user_type == Role.DIRECTOR.value:
+        raise HTTPException(status_code=405, detail="Directors cannot be linked to a player profile!")
+
+    user_id = find_by_email(user_email).id
+    player_profile_id = find_player_id_by_nickname(player_profile_nickname)
 
     if x_token is None:
         raise HTTPException(status_code=401, detail="You must be logged in to send a request.")
@@ -212,17 +219,22 @@ def deny_link_request(link_request_id, x_token: str = Header(default=None)):
 
 
 @users_router.post("/promote-request")
-def send_promotion_request(user_id: int, x_token: str = Header(default=None)):
+def send_promotion_request(user_email: str, x_token: str = Header(default=None)):
     """
     Creates a promotion to director request.
 
     Args:
-        user_id: int
+        user_email: str
         x_token: JWT token
 
     Returns:
         A message about the sending of the promotion request.
     """
+
+    if get_user_or_raise_401(x_token).user_type == Role.DIRECTOR.value:
+        raise HTTPException(status_code=405, detail="You are already a director!")
+
+    user_id = find_by_email(user_email).id
 
     if x_token is None:
         raise HTTPException(status_code=401, detail="You must be logged in to send a request.")
@@ -255,7 +267,6 @@ def approve_promotion_request_endpoint(promote_request_id: int, x_token: str = H
 
     user = get_user_or_raise_401(x_token)
 
-    # Assuming there's a function to check if the user is an admin
     if not user_service.is_admin(user):
         raise HTTPException(status_code=403, detail="Only admins can approve promotion requests.")
 
