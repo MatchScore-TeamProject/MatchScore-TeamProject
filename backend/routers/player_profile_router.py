@@ -1,20 +1,24 @@
-from fastapi import APIRouter, Header, HTTPException, Body, Query
+import re
 
+from fastapi import APIRouter, Header, HTTPException, Body, Query
+from fastapi.responses import JSONResponse
 from authentication.auth import get_user_or_raise_401
 from models.player_profile import PlayerProfile
 from services import utilities
-from services.player_profile_service import create_player_profile, delete_player_profile, edit_player_profile
+from services.player_profile_service import create_player_profile, delete_player_profile, edit_player_profile, \
+    view_player_profile
 from services.user_service import is_admin
 
 player_profile_router = APIRouter(prefix="/players", tags=["Players"])
 
 
 @player_profile_router.post("/create")
-def create_player_profile_endpoint(nickname: str,
-                                   full_name: str,
-                                   country: str,
-                                   sports_club: str,
+def create_player_profile_endpoint(nickname: str = Query(),
+                                   full_name: str = Query(description="Name should consist of: FirstName Surname FamilyName"),
+                                   country: str = Query(),
+                                   sports_club: str = Query(None),
                                    x_token: str = Header(default=None)):
+
     if x_token is None:
         raise HTTPException(status_code=401, detail='You must be logged in to create a player profile.')
 
@@ -84,6 +88,21 @@ def edit_player_profile_endpoint(
         country=country,
         sports_club=sports_club
     )
-
     result = edit_player_profile(player_profile_id, new_profile_data, user_id, user_type)
     return result
+
+
+@player_profile_router.get("/view-player/{nickname}")
+def view_player_endpoint(player_nickname: str):
+    player_info = view_player_profile(player_nickname)
+
+    output = {
+        "Player Information": {
+            "-Nickname": player_info[0],
+            "-Name": player_info[1],
+            "-Country": player_info[2],
+            "-Sports Club": player_info[3]
+        }
+    }
+
+    return JSONResponse(content=output)

@@ -1,15 +1,19 @@
-from fastapi import HTTPException
 
-from database.database_connection import read_query, read_query_additional, update_query, insert_query
+from fastapi import HTTPException
+import re
+from database.database_connection import read_query, update_query, insert_query
 from models.player_profile import PlayerProfile
 
 
 def create_player_profile(nickname, full_name, country, sports_club, users_id):
+    validate_name(full_name)
+
     generated_id = insert_query(
         """INSERT INTO player_profile(nickname, full_name, country, sports_club, users_id) VALUES (?,?,?,?,?)""",
         (nickname, full_name, country, sports_club, users_id))
 
-    return PlayerProfile(id=generated_id, nickname=nickname, full_name=full_name, country=country, sports_club=sports_club, user_id=users_id)
+    return PlayerProfile(id=generated_id, nickname=nickname, full_name=full_name, country=country,
+                         sports_club=sports_club, user_id=users_id)
 
 
 def delete_player_profile(player_profile_id):
@@ -59,4 +63,21 @@ def find_non_existing_players(player_profiles: list[str]) -> list[str]:
     non_existing_players = [nickname for nickname in player_profiles if (nickname,) not in existing_players]
 
     return non_existing_players if non_existing_players else None
-    
+
+
+def view_player_profile(player_data: str):
+    info = read_query(
+        "SELECT nickname, full_name, country, sports_club FROM player_profile WHERE nickname=?",
+        (player_data,))
+
+    if not info:
+        raise HTTPException(status_code=404, detail="Player with this name or nickname doesnt exist!")
+
+    return info[0]
+
+
+def validate_name(name: str):
+    pattern = r"^[A-Za-z]+ [A-Za-z]+ [A-Za-z]+$"
+
+    if not re.match(pattern, name):
+        raise HTTPException(status_code=422, detail="Please enter a valid name!")
