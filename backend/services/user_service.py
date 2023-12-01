@@ -1,11 +1,12 @@
-from database.database_connection import read_query, read_query_additional, update_query, insert_query
+from database.database_connection import read_query, update_query, insert_query
 from fastapi import HTTPException
 from models.user import User
-from authentication.auth import find_by_email, find_by_id
+from authentication.auth import find_by_email, get_user_or_raise_401
 from models.options import Role, CurrentStatus, EmailType
 from models.requests import LinkRequest, PromoteRequest
 from services import utilities
-from services.emails import send_email_for_requests
+from emails_logic.emails import send_email_for_requests
+from services.utilities import get_user_email_to_send_email_to, get_user_id_from_table
 
 
 def _hash_password(password: str):
@@ -158,6 +159,7 @@ def approve_link_request(link_request_id: int) -> str:
 
     current_status, user_id, player_profile_id = link_request_data[0]
 
+
     if current_status == CurrentStatus.DENIED.value:
         raise HTTPException(status_code=404, detail="Status cannot be changed from approved to denied and vice versa.")
 
@@ -171,10 +173,10 @@ def approve_link_request(link_request_id: int) -> str:
         (CurrentStatus.APPROVED.value, link_request_id,)
     )
 
-    user_email = read_query("SELECT email FROM users WHERE id=?", (user_id,))[0][0]
+    user_email = get_user_email_to_send_email_to(user_id)
 
-
-    send_email_for_requests(receiver=user_email, conformation=CurrentStatus.APPROVED.value, email_type=EmailType.LINK_REQUEST.value)
+    send_email_for_requests(receiver=user_email, conformation=CurrentStatus.APPROVED.value,
+                            email_type=EmailType.LINK_REQUEST.value)
 
     return "Link request approved."
 
@@ -204,10 +206,11 @@ def deny_link_request(link_request_id: int) -> str:
 
     update_query("UPDATE link_requests SET status = ? WHERE id = ?", (CurrentStatus.DENIED.value, link_request_id))
 
-    user_id = read_query("SELECT user_id FROM link_requests WHERE id=?", (link_request_id,))[0][0]
-    user_email = read_query("SELECT email FROM users WHERE id=?", (user_id,))[0][0]
+    user_id = get_user_id_from_table(link_request_id, "link_requests")
+    user_email = get_user_email_to_send_email_to(user_id)
 
-    send_email_for_requests(receiver=user_email, conformation=CurrentStatus.DENIED.value, email_type=EmailType.LINK_REQUEST.value)
+    send_email_for_requests(receiver=user_email, conformation=CurrentStatus.DENIED.value,
+                            email_type=EmailType.LINK_REQUEST.value)
 
     return "Link request denied"
 
@@ -265,7 +268,7 @@ def approve_promote_request(promote_request_id: int) -> str:
 
     update_query(
         "UPDATE users SET user_type = ? WHERE id = ?",
-        (user_id, Role.DIRECTOR.value)
+        (Role.DIRECTOR.value, user_id)
     )
 
     update_query(
@@ -273,9 +276,15 @@ def approve_promote_request(promote_request_id: int) -> str:
         (CurrentStatus.APPROVED.value, promote_request_id,)
     )
 
-    user_email = read_query("SELECT email FROM users WHERE id=?", (user_id,))[0][0]
+    player_profile_id_list = read_query("SELECT id FROM player_profile WHERE users_id=?", (user_id,))
+    if player_profile_id_list:
+        player_profile_id = player_profile_id_list[0][0]
+        update_query("UPDATE player_profile SET users_id = NULL WHERE id=?", (player_profile_id,))
 
-    send_email_for_requests(receiver=user_email, conformation=CurrentStatus.APPROVED.value, email_type=EmailType.PROMOTE_REQUEST.value)
+    user_email = get_user_email_to_send_email_to(user_id)
+
+    send_email_for_requests(receiver=user_email, conformation=CurrentStatus.APPROVED.value,
+                            email_type=EmailType.PROMOTE_REQUEST.value)
 
     return "Promotion request approved."
 
@@ -292,7 +301,7 @@ def deny_promote_request(promote_request_id: int) -> str:
     """
 
     promote_request_data = read_query(
-        "SELECT status FROM promotion_requests WHERE id = ?",
+        "SELECT status FROM promote_requests WHERE id = ?",
         (promote_request_id,)
     )
 
@@ -305,13 +314,14 @@ def deny_promote_request(promote_request_id: int) -> str:
         raise HTTPException(status_code=409, detail="Cannot change the status of a request that is already processed.")
 
     update_query(
-        "UPDATE promotion_requests SET status = ? WHERE id = ?",
+        "UPDATE promote_requests SET status = ? WHERE id = ?",
         (CurrentStatus.DENIED.value, promote_request_id,)
     )
 
-    user_id = read_query("SELECT user_id FROM link_requests WHERE id=?", (promote_request_id,))[0][0]
-    user_email = read_query("SELECT email FROM users WHERE id=?", (user_id,))[0][0]
+    user_id = get_user_id_from_table(promote_request_id, "promote_requests")
+    user_email = get_user_email_to_send_email_to(user_id)
 
-    send_email_for_requests(receiver=user_email, conformation=CurrentStatus.DENIED.value, email_type=EmailType.PROMOTE_REQUEST.value)
+    send_email_for_requests(receiver=user_email, conformation=CurrentStatus.DENIED.value,
+                            email_type=EmailType.PROMOTE_REQUEST.value)
 
     return "Promotion request denied."
