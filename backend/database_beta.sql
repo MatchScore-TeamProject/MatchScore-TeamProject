@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS `match_score_project`.`player_profile` (
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
-AUTO_INCREMENT = 33
+AUTO_INCREMENT = 39
 DEFAULT CHARACTER SET = latin1;
 
 
@@ -89,6 +89,7 @@ CREATE TABLE IF NOT EXISTS `match_score_project`.`tournaments` (
   `prize` INT(11) NULL DEFAULT NULL,
   PRIMARY KEY (`id`))
 ENGINE = InnoDB
+AUTO_INCREMENT = 2
 DEFAULT CHARACTER SET = latin1;
 
 
@@ -106,7 +107,7 @@ CREATE TABLE IF NOT EXISTS `match_score_project`.`matches` (
   `player_profile_id2` INT(11) NULL DEFAULT NULL,
   `winner` VARCHAR(45) NULL DEFAULT NULL,
   `stage` VARCHAR(45) NULL DEFAULT NULL,
-  `order_num` INT(11) NULL,
+  `order_num` INT(11) NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   INDEX `fk_match_tournament1_idx` (`tournament_id` ASC) VISIBLE,
   INDEX `fk_matches_player_profile1_idx` (`player_profile_id1` ASC) VISIBLE,
@@ -127,7 +128,7 @@ CREATE TABLE IF NOT EXISTS `match_score_project`.`matches` (
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
-AUTO_INCREMENT = 15
+AUTO_INCREMENT = 18
 DEFAULT CHARACTER SET = latin1;
 
 

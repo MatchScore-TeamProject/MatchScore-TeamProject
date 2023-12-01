@@ -45,27 +45,6 @@ def update_match_by_id(id: int, match: Match, x_token: str):
     return matches_service.update_by_id(existing_match, match)
 
 
-# @matches_router.post('/')
-# def create_match(date: str = Query(description="To create a match, enter a date in the format: yyyy-mm-dd"),
-#                  format: str = Query("time or score"),
-#                  nickname_1: str = Query(),
-#                  nickname_2: str = Query(),
-#                  x_token: str = Header(default=None)):
-#
-#     user = get_user_or_raise_401(x_token)
-#
-#     if x_token is None:
-#         raise HTTPException(status_code=401, detail="You need to be logged in to create a match!")
-#
-#     if not (is_admin(user) or is_director(user)):
-#         raise HTTPException(status_code=401, detail="Unauthorized user to create match.")
-#
-#     if date < CurrDateTime.CURRENT_DATE:
-#         return HTTPException(status_code=205, detail=f"You cannot create a match with a past date!")
-#
-#     match = matches_service.create(date=date, format=format, nickname_1=nickname_1, nickname_2=nickname_2)
-#     return match
-
 @matches_router.post('/')
 def create_match(date: str = Query(description="To create a match, enter a date in the format: yyyy-mm-dd"),
                  format: str = Query("time or score"),
