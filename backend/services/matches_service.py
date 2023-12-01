@@ -1,6 +1,8 @@
 from database.database_connection import read_query, insert_query, update_query
 from models.match import Match
-from services.utilities import find_player_id_by_nickname
+from models.options import EmailType
+from services.utilities import find_player_id_by_nickname, get_user_email_to_send_email_to, get_user_id_from_table
+from emails_logic.emails import send_email_for_added_to_event, send_email_changed_match_date
 
 
 def all(search: str = None):
@@ -62,6 +64,17 @@ def update_by_id(old: Match, new: Match):
                   merged.order_num,
                   merged.id))
 
+    user_id1 = get_user_id_from_table(merged.player_profile_id1, "player_profile")
+    user_id2 = get_user_id_from_table(merged.player_profile_id2, "player_profile")
+
+    user_email1 = get_user_email_to_send_email_to(user_id1)
+    user_email2 = get_user_email_to_send_email_to(user_id2)
+
+
+    if new.date is not None:
+        send_email_changed_match_date(receiver=user_email1, new_date=new.date, email_type=EmailType.MATCH_CHANGED.value)
+        send_email_changed_match_date(receiver=user_email2, new_date=new.date, email_type=EmailType.MATCH_CHANGED.value)
+
     return merged
 
 
@@ -71,9 +84,11 @@ def exist(id: int):
 
 def sort(result: list[Match], *, attribute="date", reverse=False):
     if attribute == "date":
-        def sort_func(m: Match): return m.date
+        def sort_func(m: Match):
+            return m.date
     else:
-        def sort_func(m: Match): return m.id
+        def sort_func(m: Match):
+            return m.id
 
     return sorted(result, key=sort_func, reverse=reverse)
 
@@ -107,7 +122,8 @@ def create(date, format, tournament_id, nickname_1=None, nickname_2=None, stage=
 
     generated_id = insert_query('''INSERT INTO matches(date, format, tournament_id, player_profile_id1, player_profile_id2, stage, order_num) 
                                 VALUES(?,?,?,?,?,?,?)''',
-                                (date, format, tournament_id, player_profile_id_1, player_profile_id_2, stage, order_num))
+                                (date, format, tournament_id, player_profile_id_1, player_profile_id_2, stage,
+                                 order_num))
 
     complete_match = get_by_id(generated_id)
 
