@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta, date
+from itertools import combinations
 from fastapi import HTTPException
 from database.database_connection import read_query, read_query_additional, update_query, insert_query
 from models.tournament import Tournament, TournamentFormat, TournamentStatus, TournamentType
@@ -9,7 +11,7 @@ from services.player_profile_service import find_non_existing_players, create_pl
 import random
 
 
-def create_tournament(
+def create_knockout(
         title: str,
         date: str,
         tournament_format: str,
@@ -188,3 +190,45 @@ def get_all_matches_in_tournament_by_id(tournament_id: int):
 #         return "Round of Sixteen"
 #     if len(players_left)== 32:
 #         return "Round of Thirty-Two"
+
+
+def create_league(tournament: Tournament, matches_per_days: int):
+
+    participants_list = tournament.player_nicknames
+    pairs = list(combinations(participants_list, 2))
+
+    list_of_matches = []
+    counter_matches = 0
+    days_counter = 0
+
+    for el in pairs:
+        nickname_1 = el[0]
+        nickname_2 = el[1]
+
+        format = tournament.match_format
+        tournament_id = tournament.id
+        order_num = None
+
+        if counter_matches % matches_per_days == 0:
+            days_counter += 1
+
+        date_str = tournament.date
+
+        date_object = datetime.strptime(date_str, '%Y-%m-%d')
+
+        date = datetime(date_object) + timedelta(days=days_counter)  # The date has to be fixed to return ONLY '%Y-%m-%d'!
+
+        match = create_match(
+            date=date,
+            format=format,
+            tournament_id=tournament_id,
+            nickname_1=nickname_1,
+            nickname_2=nickname_2,
+            stage=0,
+            order_num=order_num)
+
+        counter_matches += 1
+        list_of_matches.append(match)
+
+    return list_of_matches
+

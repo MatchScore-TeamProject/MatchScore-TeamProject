@@ -19,9 +19,10 @@ def create(
         match_format: str = Query(),
         prize: str = Query(),
         player_nicknames: List[str] = Body(),
-        x_token: str = Header(default=None)):
+        x_token: str = Header(default=None),
+        match_per_day: int = Query(default=None)):
     if x_token is None:
-        raise HTTPException(status_code=401, detail="You need to log in first")
+        raise HTTPException(status_code=401, detail="You need to log in first.")
 
     user = get_user_or_raise_401(x_token)
 
@@ -31,12 +32,26 @@ def create(
     if date < CurrDateTime.CURRENT_DATE:
         return HTTPException(status_code=205, detail=f"You cannot create a tournament with a past date!")
 
-    tournament_result = tournaments_service.create_tournament(
-        title, date, tournament_format, match_format, prize, player_nicknames
-    )
+    tournament = Tournament(
+        title=title,
+        date=date,
+        tournament_format=tournament_format,
+        match_format=match_format,
+        prize=prize,
+        player_nicknames=player_nicknames)
 
-    new_tournament, player_nicknames = tournament_result
-    return {"Tournament": new_tournament}
+    if tournament_format == TournamentFormat.LEAGUE.value:
+        new_tournament = tournaments_service.create_league(tournament, match_per_day), player_nicknames
+        return {"Tournament": new_tournament}
+
+    elif tournament_format == TournamentFormat.KNOCKOUT.value:
+        new_tournament = tournaments_service.create_knockout(
+            title, date, tournament_format, match_format, prize, player_nicknames), player_nicknames
+        return {"Tournament": new_tournament}
+
+    else:
+        return HTTPException(status_code=400, detail=f"The format of the tournament should be: "
+                                                     f"'{TournamentFormat.KNOCKOUT.value}' or '{TournamentFormat.LEAGUE.value}'")
 
 
 @tournaments_router.get('/')
