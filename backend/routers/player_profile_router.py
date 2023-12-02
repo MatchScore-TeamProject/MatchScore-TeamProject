@@ -12,6 +12,22 @@ from services.user_service import is_admin
 player_profile_router = APIRouter(prefix="/players", tags=["Players"])
 
 
+@player_profile_router.get("/view-player/{nickname}")
+def view_player_endpoint(player_nickname: str):
+    player_info = view_player_profile(player_nickname)
+
+    output = {
+        "Player Information": {
+            "-Nickname": player_info[0],
+            "-Name": player_info[1],
+            "-Country": player_info[2],
+            "-Sports Club": player_info[3]
+        }
+    }
+
+    return JSONResponse(content=output)
+
+
 @player_profile_router.post("/create")
 def create_player_profile_endpoint(nickname: str = Query(),
                                    full_name: str = Query(description="Name should consist of: FirstName Surname FamilyName"),
@@ -32,26 +48,7 @@ def create_player_profile_endpoint(nickname: str = Query(),
     return f"Profile for {full_name} was created."
 
 
-@player_profile_router.delete("/delete")
-def delete_player_profile_endpoint(player_profile_id: int, x_token: str = Header(Default=None)):
-    if x_token is None:
-        raise HTTPException(status_code=401, detail='You must be logged in to delete a player profile.')
-
-    user = get_user_or_raise_401(x_token)
-
-    if not utilities.id_exists(player_profile_id, 'player_profile'):
-        raise HTTPException(status_code=404, detail=f'User with id {player_profile_id} does not exist.')
-
-    if is_admin(user):
-        delete_player_profile(player_profile_id)
-
-    if not is_admin(user):
-        raise HTTPException(status_code=401, detail='You must be admin to delete a user.')
-
-    return f"Profile with ID: {player_profile_id} was deleted."
-
-
-@player_profile_router.put("/player-profile/{player_profile_id}")
+@player_profile_router.put("/edit/{player_profile_id}")
 def edit_player_profile_endpoint(
         player_profile_id: int,
         nickname: str = Query(default=None, description="New nickname"),
@@ -92,17 +89,20 @@ def edit_player_profile_endpoint(
     return result
 
 
-@player_profile_router.get("/view-player/{nickname}")
-def view_player_endpoint(player_nickname: str):
-    player_info = view_player_profile(player_nickname)
+@player_profile_router.delete("/delete")
+def delete_player_profile_endpoint(player_profile_id: int, x_token: str = Header(Default=None)):
+    if x_token is None:
+        raise HTTPException(status_code=401, detail='You must be logged in to delete a player profile.')
 
-    output = {
-        "Player Information": {
-            "-Nickname": player_info[0],
-            "-Name": player_info[1],
-            "-Country": player_info[2],
-            "-Sports Club": player_info[3]
-        }
-    }
+    user = get_user_or_raise_401(x_token)
 
-    return JSONResponse(content=output)
+    if not utilities.id_exists(player_profile_id, 'player_profile'):
+        raise HTTPException(status_code=404, detail=f'User with id {player_profile_id} does not exist.')
+
+    if is_admin(user):
+        delete_player_profile(player_profile_id)
+
+    if not is_admin(user):
+        raise HTTPException(status_code=401, detail='You must be admin to delete a user.')
+
+    return f"Profile with ID: {player_profile_id} was deleted."
