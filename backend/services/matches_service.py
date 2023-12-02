@@ -1,20 +1,55 @@
 from database.database_connection import read_query, insert_query, update_query
 from models.match import Match
 from models.options import EmailType
-from services.utilities import find_player_id_by_nickname, get_user_email_to_send_email_to, get_user_id_from_table
+from services.utilities import find_player_id_by_nickname, get_user_email_to_send_email_to, get_user_id_from_table, \
+    find_player_nickname_by_id
 from emails_logic.emails import send_email_for_added_to_event, send_email_changed_match_date
 
 
-def all(search: str = None):
-    if search is None:
-        data = read_query('''SELECT id, date, format, tournament_id, player_profile_id1, player_profile_id2, score_1, score_2, winner, stage, order_num
-                             FROM matches''')
-    else:
-        data = read_query('''SELECT id, date, format, tournament_id, player_profile_id1, player_profile_id2, score_1, score_2, winner, stage, order_num
-                             FROM matches
-                             WHERE id LIKE ?''', (f"%{search}",))
+def all(search: str = None, date: str = None):
+    if search and date:
 
-    return (Match.from_query_result(*row) for row in data)
+        data = read_query('''SELECT id, date, format, tournament_id, player_profile_id1, player_profile_id2, score_1, score_2, winner, stage, order_num
+                                FROM matches
+                                WHERE id LIKE ? AND date = ?''', (f"%{search}%", date))
+    elif date:
+
+        data = read_query('''SELECT id, date, format, tournament_id, player_profile_id1, player_profile_id2, score_1, score_2, winner, stage, order_num
+                                FROM matches
+                                WHERE date = ?''', (date,))
+    elif search:
+
+        data = read_query('''SELECT id, date, format, tournament_id, player_profile_id1, player_profile_id2, score_1, score_2, winner, stage, order_num
+                                FROM matches
+                                WHERE id LIKE ?''', (f"%{search}%",))
+    else:
+
+        data = read_query('''SELECT id, date, format, tournament_id, player_profile_id1, player_profile_id2, score_1, score_2, winner, stage, order_num
+                                FROM matches''')
+
+    matches = []
+
+    for row in data:
+        player1_nickname = find_player_nickname_by_id(row[4])
+        player2_nickname = find_player_nickname_by_id(row[5])
+        winner_nickname = row[8] if row[8] else "N/A"
+        tournament_name = read_query("SELECT title FROM tournaments WHERE id=?", (row[3],))
+        if not tournament_name:
+            tournament_name = "This match is not part of a tournament!"
+        else:
+            tournament_name = tournament_name[0][0]
+
+        match = {
+            "id": row[0],
+            "date": row[1],
+            "format": row[2],
+            "details": f"{player1_nickname} {row[6]} vs {row[7]} {player2_nickname}",
+            "winner": winner_nickname,
+            "name": tournament_name
+        }
+        matches.append(match)
+
+    return matches
 
 
 def get_by_id(id: int):
@@ -25,57 +60,17 @@ def get_by_id(id: int):
     return next((Match.from_query_result(*row) for row in data), None)
 
 
-def update_by_id(old: Match, new: Match):
-    merged = Match(id=old.id,
-                   date=new.date or old.date,
-                   format=new.format or old.format,
-                   tournament_id=new.tournament_id or old.tournament_id,
-                   score_1=new.score_1 or old.score_1,
-                   score_2=new.score_2 or old.score_2,
-                   player_profile_id1=new.player_profile_id1 or old.player_profile_id1,
-                   player_profile_id2=new.player_profile_id2 or old.player_profile_id2,
-                   winner=new.winner or old.winner,
-                   stage=new.stage or old.stage,
-                   order_num=new.order_num or old.order_num
-                   )
+def update_by_id(old: Match, new_date):
+    update_query('''UPDATE matches SET date = ? WHERE id = ?''', (new_date, old.id))
 
-    update_query('''UPDATE matches SET 
-                    date = ?, 
-                    format = ?, 
-                    tournament_id = ?, 
-                    score_1 = ?,
-                    score_2 = ?,
-                    player_profile_id1 = ?,
-                    player_profile_id2 = ?,
-                    winner = ?,
-                    stage = ?,
-                    order_num = ?
-                    WHERE id = ?''',
-
-                 (merged.date,
-                  merged.format,
-                  merged.tournament_id,
-                  merged.score_1,
-                  merged.score_2,
-                  merged.player_profile_id1,
-                  merged.player_profile_id2,
-                  merged.winner,
-                  merged.stage,
-                  merged.order_num,
-                  merged.id))
-
-    user_id1 = get_user_id_from_table(merged.player_profile_id1, "player_profile")
-    user_id2 = get_user_id_from_table(merged.player_profile_id2, "player_profile")
+    user_id1 = get_user_id_from_table(old.player_profile_id1, "player_profile")
+    user_id2 = get_user_id_from_table(old.player_profile_id2, "player_profile")
 
     user_email1 = get_user_email_to_send_email_to(user_id1)
     user_email2 = get_user_email_to_send_email_to(user_id2)
 
-
-    if new.date is not None:
-        send_email_changed_match_date(receiver=user_email1, new_date=new.date, email_type=EmailType.MATCH_CHANGED.value)
-        send_email_changed_match_date(receiver=user_email2, new_date=new.date, email_type=EmailType.MATCH_CHANGED.value)
-
-    return merged
+    send_email_changed_match_date(receiver=user_email1, new_date=new_date, email_type=EmailType.MATCH_CHANGED.value)
+    send_email_changed_match_date(receiver=user_email2, new_date=new_date, email_type=EmailType.MATCH_CHANGED.value)
 
 
 def exist(id: int):
