@@ -58,26 +58,27 @@ def create_knockout(
     link_player_profile_and_tournament(player_nicknames, tournament)
 
     # matches = pair_knockout_matches(player_nicknames, tournament)
-    matches = create_all_next_matches(tournament, len(player_nicknames) // 2, player_nicknames)
+    create_all_next_matches(tournament, len(player_nicknames) // 2, player_nicknames)
 
-    initial_games = populate_initial_matches_with_players(tournament, player_nicknames)
+    populate_initial_matches_with_players(tournament, player_nicknames)
 
-    return tournament, player_nicknames
+    return tournament
 
 
 def create_and_insert_match(tournament: Tournament, player1: str, player2: str, stage, order_num: int):
-    created_match = create_match(tournament.date, tournament.match_format, tournament.id, player1, player2, stage, order_num)
+    created_match = create_match(tournament.date, tournament.match_format, tournament.id, player1, player2, stage,
+                                 order_num)
     return created_match
 
 
 def link_player_profile_and_tournament(player_nicknames, tournament):
     for player_nickname in player_nicknames:
-            player_id = find_player_id_by_nickname(player_nickname)
-            if player_id is not None:
-                insert_query(
-                    """INSERT INTO tournaments_has_player_profile(tournaments_id, player_profile_id) VALUES (?, ?)""",
-                    (tournament.id, player_id),
-                )
+        player_id = find_player_id_by_nickname(player_nickname)
+        if player_id is not None:
+            insert_query(
+                """INSERT INTO tournaments_has_player_profile(tournaments_id, player_profile_id) VALUES (?, ?)""",
+                (tournament.id, player_id),
+            )
 
 
 def all():
@@ -102,10 +103,22 @@ def all():
 
         nicknames = [nickname[0] for nickname in nicknames_data]
 
-        tournament = [Tournament.from_query_result(*row, player_nicknames=nicknames)]
-        tournaments.append(tournament)
+        matches = get_all_matches_in_tournament_by_id(tournament_id)
+
+        tournament_dict = {
+            "Name": row[1],
+            "Date": row[2],
+            "Tournament Format": row[3],
+            "Matches Format": row[4],
+            "Prize": f"{row[5]}$",
+            "Players' Nicknames": ", ".join(nicknames),
+            "Matches": matches
+        }
+
+        tournaments.append(tournament_dict)
 
     return tournaments
+
 
 def get_by_id(tournament_id: int):
     data = read_query(
@@ -129,9 +142,19 @@ def get_by_id(tournament_id: int):
 
     nicknames = [nickname[0] for nickname in nicknames_data]
 
-    tournament = Tournament.from_query_result(*row, player_nicknames=nicknames)
+    matches = get_all_matches_in_tournament_by_id(tournament_id)
 
-    return tournament
+    tournament_dict = {
+        "Name": row[1],
+        "Date": row[2],
+        "Tournament Format": row[3],
+        "Match Format": row[4],
+        "Prize": f"{row[5]}$",
+        "Players' Nicknames": ", ".join(nicknames),
+        "Matches": matches
+    }
+
+    return tournament_dict
 
 
 def create_all_next_matches(tournament: Tournament, matches_count: int, player_nicknames: List[str]):
@@ -175,10 +198,24 @@ def get_all_matches_in_tournament_by_id(tournament_id: int):
         WHERE tournament_id = ?''',
         (tournament_id,))
 
-    return data
+    formatted_matches = []
+
+    for match in data:
+        player1_name = find_player_nickname_by_id(match[5])
+        player2_name = find_player_nickname_by_id(match[6])
+        score_1 = match[3]
+        score_2 = match[4]
+
+        match_string = f"{player1_name} {score_1} vs {score_2} {player2_name} | Winner: {match[7]} | Stage: {match[8]}"
+
+        formatted_matches.append(match_string)
+
+    return formatted_matches
 
 
 """It is about to be used in league functionality"""
+
+
 # def find_stage_from_players(players_left: list):
 #     if len(players_left)== 2:
 #         return "Final"
@@ -192,8 +229,15 @@ def get_all_matches_in_tournament_by_id(tournament_id: int):
 #         return "Round of Thirty-Two"
 
 
-def create_league(tournament: Tournament, matches_per_days: int):
+def delete_tournament(tournament_id: int):
+    insert_query("DELETE FROM tournaments_has_player_profile WHERE tournaments_id = ?", (tournament_id,))
 
+    insert_query("DELETE FROM matches WHERE tournament_id = ?", (tournament_id,))
+
+    insert_query("DELETE FROM tournaments WHERE id = ?", (tournament_id,))
+
+
+def create_league(tournament: Tournament, matches_per_days: int):
     participants_list = tournament.player_nicknames
     pairs = list(combinations(participants_list, 2))
 
@@ -216,7 +260,8 @@ def create_league(tournament: Tournament, matches_per_days: int):
 
         date_object = datetime.strptime(date_str, '%Y-%m-%d')
 
-        date = datetime(date_object) + timedelta(days=days_counter)  # The date has to be fixed to return ONLY '%Y-%m-%d'!
+        date = datetime(date_object) + timedelta(
+            days=days_counter)  # The date has to be fixed to return ONLY '%Y-%m-%d'!
 
         match = create_match(
             date=date,
@@ -232,3 +277,11 @@ def create_league(tournament: Tournament, matches_per_days: int):
 
     return list_of_matches
 
+
+def get_tournament_id_by_name(tournament_name: str):
+    tournament_id = read_query("SELECT id FROM tournaments WHERE title=?", (tournament_name,))
+
+    if not tournament_id:
+        raise HTTPException(status_code=404, detail="Tournament not found.")
+
+    return tournament_id[0][0]
