@@ -42,8 +42,7 @@ def create(
         match_format: str = Query(),
         prize: str = Query(),
         player_nicknames: List[str] = Body(),
-        x_token: str = Header(default=None),
-        match_per_day: int = Query(default=None)):
+        x_token: str = Header(default=None)):
     if x_token is None:
         raise HTTPException(status_code=401, detail="You need to log in first.")
 
@@ -64,7 +63,8 @@ def create(
         player_nicknames=player_nicknames)
 
     if tournament_format == TournamentFormat.LEAGUE.value:
-        new_tournament = tournaments_service.create_league(tournament, match_per_day), player_nicknames
+        new_tournament = tournaments_service.create_league(
+            title, date, tournament_format, match_format, prize, player_nicknames)
         return {"Tournament": new_tournament}
 
     elif tournament_format == TournamentFormat.KNOCKOUT.value:

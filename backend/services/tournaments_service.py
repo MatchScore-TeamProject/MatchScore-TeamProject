@@ -237,14 +237,44 @@ def delete_tournament(tournament_id: int):
     insert_query("DELETE FROM tournaments WHERE id = ?", (tournament_id,))
 
 
-def create_league(tournament: Tournament, matches_per_days: int):
-    participants_list = tournament.player_nicknames
+def create_league(
+        title: str,
+        date: str,
+        tournament_format: str,
+        match_format: str,
+        prize: str,
+        player_nicknames: List[str]):
+
+    participants_list = player_nicknames
     pairs = list(combinations(participants_list, 2))
 
     list_of_matches = []
     counter_matches = 0
-    days_counter = 0
+    # days_counter = 0
 
+    tournament = Tournament(
+        title=title,
+        date=date,
+        tournament_format=tournament_format,
+        match_format=match_format,
+        prize=prize,
+        player_nicknames=player_nicknames
+    )
+
+    generated_id = insert_query(
+        """INSERT INTO tournaments(
+            title, date, tournament_format, match_format, prize
+        ) VALUES(?, ?, ?, ?, ?)""",
+        (
+            title,
+            date,
+            tournament_format,
+            match_format,
+            prize,
+        ),
+    )
+
+    tournament.id = generated_id
     for el in pairs:
         nickname_1 = el[0]
         nickname_2 = el[1]
@@ -253,18 +283,18 @@ def create_league(tournament: Tournament, matches_per_days: int):
         tournament_id = tournament.id
         order_num = None
 
-        if counter_matches % matches_per_days == 0:
-            days_counter += 1
+        # if counter_matches % matches_per_days == 0:
+        #     days_counter += 1
 
         date_str = tournament.date
 
         date_object = datetime.strptime(date_str, '%Y-%m-%d')
 
-        date = datetime(date_object) + timedelta(
-            days=days_counter)  # The date has to be fixed to return ONLY '%Y-%m-%d'!
+        data = date_object + timedelta(days=counter_matches)  # The date has to be fixed to return ONLY '%Y-%m-%d'!
+        result_date_str = data.strftime('%Y-%m-%d')
 
         match = create_match(
-            date=date,
+            date=result_date_str,
             format=format,
             tournament_id=tournament_id,
             nickname_1=nickname_1,
