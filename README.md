@@ -1,7 +1,10 @@
 ## MatchScore
- 
+
 ## 1. Description
 MatchScore project is a complete solution designed to simplify the organization and management of sports events, mainly serving tournaments and matches. The system offers a range of features which support sports competitions, including both one-off matches and structured tournaments in knockout or league formats.The main purpose of the application to register events with participants on certain dates and adding results of played matches.
+We use the FASTAPI swagger for the project.
+- `To go to the swagger after you've ran main.py`:http://127.0.0.1:8001/docs
+- `Link to  Repo`: https://github.com/MatchScore-TeamProject/MatchScore-TeamProject
  
 ## 2. Application features
  
@@ -47,24 +50,6 @@ MatchScore project is a complete solution designed to simplify the organization 
     <p style="margin-top: 10px;">Database Structure for MatchScore Application</p>
 </div>
  
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ****
 Team:
 D. TOTIN,
