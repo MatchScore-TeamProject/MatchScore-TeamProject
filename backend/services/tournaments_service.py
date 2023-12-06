@@ -304,3 +304,42 @@ def get_tournament_id_by_name(tournament_name: str):
         raise HTTPException(status_code=404, detail="Tournament not found.")
 
     return tournament_id[0][0]
+
+
+def get_standings_by_league_name(league_name: str):
+    standings_data = read_query(
+        """
+        SELECT
+        player_profile.nickname,
+        SUM(
+            CASE
+                WHEN matches.winner = player_profile.nickname THEN 3
+                WHEN matches.winner = 'Draw' THEN 1
+                ELSE 0
+            END
+        ) as total_points,
+        COUNT(DISTINCT matches.id) as matches_played
+        FROM
+        tournaments
+        JOIN matches ON tournaments.id = matches.tournament_id
+        JOIN player_profile ON matches.player_profile_id1 = player_profile.id OR matches.player_profile_id2 = player_profile.id
+        WHERE
+        tournaments.title = ?
+        GROUP BY
+        player_profile.nickname
+        ORDER BY
+        total_points DESC
+        """,
+        (league_name,)
+    )
+
+    standings = []
+
+    for row in standings_data:
+        player_name = row[0]
+        total_points = row[1]
+
+        standing_info = f"Player - {player_name}: {total_points} pts"
+        standings.append(standing_info)
+
+    return standings

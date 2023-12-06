@@ -6,7 +6,8 @@ from models.player_profile import PlayerProfile
 
 
 def create_player_profile(nickname, full_name, country, sports_club, users_id):
-    validate_name(full_name)
+    if full_name:
+        validate_name(full_name)
 
     generated_id = insert_query(
         """INSERT INTO player_profile(nickname, full_name, country, sports_club, users_id) VALUES (?,?,?,?,?)""",

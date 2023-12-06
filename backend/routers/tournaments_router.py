@@ -3,7 +3,7 @@ from authentication.auth import find_by_id, get_user_or_raise_401, create_token
 from models.options import CurrDateTime
 from models.tournament import Tournament, TournamentFormat, TournamentStatus, TournamentType, TournamentResponse
 from services.matches_service import update_result_by_nicknames
-from services.tournaments_service import delete_tournament, get_tournament_id_by_name
+from services.tournaments_service import delete_tournament, get_tournament_id_by_name, get_standings_by_league_name
 from services.user_service import is_director, is_admin
 from services import tournaments_service
 from typing import List
@@ -67,7 +67,7 @@ def create(
 
     elif tournament_format == TournamentFormat.KNOCKOUT.value:
         new_tournament = tournaments_service.create_knockout(
-            title, date, tournament_format, match_format, prize, player_nicknames), player_nicknames
+            title, date, tournament_format, match_format, prize, player_nicknames)
         return {"Tournament": new_tournament}
 
     else:
@@ -110,3 +110,14 @@ def delete_tournament_endpoint(tournament_id: int, x_token: str = Header(default
     delete_tournament(tournament_id)
 
     return "Tournament deleted successfully!"
+
+
+@tournaments_router.get('/standings/{league_name}')
+def get_league_standings(league_name: str):
+
+    result = get_standings_by_league_name(league_name)
+
+    if result is None:
+        raise HTTPException(status_code=404, detail="League not found")
+
+    return result
