@@ -176,7 +176,7 @@ def update_result_by_nicknames(tournament_id: int, nickname_1: str, score_1: int
 
 
 def winner_to_next_stage(tournament_id: int, winner: str):
-    first_available_match = read_query('''SELECT order_num FROM matchesWHERE tournament_id = ? AND (player_profile_id1 is NULL OR player_profile_id2 is NULL)''', (tournament_id,))
+    first_available_match = read_query('''SELECT order_num FROM matches WHERE tournament_id = ? AND (player_profile_id1 is NULL OR player_profile_id2 is NULL)''', (tournament_id,))
 
     available_match = first_available_match[0][0]
 
