@@ -144,8 +144,10 @@ def update_result_by_nicknames(tournament_id: int, nickname_1: str, score_1: int
 
     if score_1 > score_2:
         winner = nickname_1
-    else:
+    elif score_2 > score_1:
         winner = nickname_2
+    else:
+        winner = 'draw'
 
     update_query('''UPDATE matches SET  
                     score_1 = ?,
@@ -173,12 +175,22 @@ def update_result_by_nicknames(tournament_id: int, nickname_1: str, score_1: int
     curr_match = correct_match[0][-1]
     curr_max_order_num = max_order_num[0][0]
 
-    if curr_max_order_num == curr_match:
+    # separates knockout from league (if stage = 0 is league, else knockout)
+    check_stage = read_query("""SELECT stage
+                                   FROM matches
+                                   WHERE tournament_id = ? AND
+                                    player_profile_id1 = ? AND
+                                    player_profile_id2 = ?""", (tournament_id, player_profile_id1, player_profile_id2))
+
+    if check_stage[0][0] != '0' and curr_max_order_num == curr_match:
         return f"The tournament is over! The winner is {winner}!"
+    if check_stage[0][0] != '0':
+        winner_to_next_stage(tournament_id, winner)
 
-    winner_to_next_stage(tournament_id, winner)
-
-    return f"Result updated. The winner is {winner}"
+    if winner != 'draw':
+        return f"Result updated. The winner is {winner}"
+    else:
+        return f"Result updated. The match ended in a draw"
 
 
 def winner_to_next_stage(tournament_id: int, winner: str):
