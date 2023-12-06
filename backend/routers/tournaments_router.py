@@ -54,13 +54,11 @@ def create(
     if date < CurrDateTime.CURRENT_DATE:
         return HTTPException(status_code=205, detail=f"You cannot create a tournament with a past date!")
 
-    tournament = Tournament(
-        title=title,
-        date=date,
-        tournament_format=tournament_format,
-        match_format=match_format,
-        prize=prize,
-        player_nicknames=player_nicknames)
+    valid_player_counts = {4, 8, 16, 32, 64}
+
+    if len(player_nicknames) not in valid_player_counts:
+        raise HTTPException(status_code=400,
+                            detail="Number of players must be 4, 8, 16, 32 or 64 for a tournament!")
 
     if tournament_format == TournamentFormat.LEAGUE.value:
         new_tournament = tournaments_service.create_league(
@@ -97,17 +95,6 @@ def update_match_winner(tournament_id: int,
         raise HTTPException(status_code=400, detail=f"Match between {nickname_1} and {nickname_2} does not exist.")
 
     return winner
-
-
-@tournaments_router.put('/edit/{id}')
-def edit_tournament_by_id(tournament_id: int, x_token: str = Header(default=None)):
-    if x_token is None:
-        raise HTTPException(status_code=401, detail='You need to log in first')
-
-    user = get_user_or_raise_401(x_token)
-
-    if not any([is_director(user), is_admin(user)]):
-        raise HTTPException(status_code=401, detail="Only directors and admins can edit tournaments")
 
 
 @tournaments_router.delete("/delete/{tournament_id}")

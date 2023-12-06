@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta
 from itertools import combinations
 from fastapi import HTTPException
 from database.database_connection import read_query, read_query_additional, update_query, insert_query
@@ -19,11 +19,6 @@ def create_knockout(
         prize: str,
         player_nicknames: List[str]
 ):
-    valid_player_counts = {4, 8, 16, 32, 64}
-
-    if len(player_nicknames) not in valid_player_counts:
-        raise HTTPException(status_code=400,
-                            detail="Number of players must be 4, 8, 16, 32 or 64 for a knockout tournament")
 
     players_to_create = find_non_existing_players(player_nicknames)
     if players_to_create:
@@ -250,7 +245,6 @@ def create_league(
 
     list_of_matches = []
     counter_matches = 0
-    # days_counter = 0
 
     tournament = Tournament(
         title=title,
@@ -275,23 +269,18 @@ def create_league(
     )
 
     tournament.id = generated_id
-    for el in pairs:
-        nickname_1 = el[0]
-        nickname_2 = el[1]
+    for pair in pairs:
+        nickname_1 = pair[0]
+        nickname_2 = pair[1]
 
         format = tournament.match_format
         tournament_id = tournament.id
         order_num = None
-
-        # if counter_matches % matches_per_days == 0:
-        #     days_counter += 1
-
+#  The following variables are for converting and adding the next match date to the current date!
         date_str = tournament.date
-
         date_object = datetime.strptime(date_str, '%Y-%m-%d')
-
-        data = date_object + timedelta(days=counter_matches)  # The date has to be fixed to return ONLY '%Y-%m-%d'!
-        result_date_str = data.strftime('%Y-%m-%d')
+        adding_days_to_date = date_object + timedelta(days=counter_matches)
+        result_date_str = adding_days_to_date.strftime('%Y-%m-%d')
 
         match = create_match(
             date=result_date_str,
@@ -309,7 +298,7 @@ def create_league(
 
 
 def get_tournament_id_by_name(tournament_name: str):
-    tournament_id = read_query("SELECT id FROM tournaments WHERE title=?", (tournament_name,))
+    tournament_id = read_query('''SELECT id FROM tournaments WHERE title=?''', (tournament_name,))
 
     if not tournament_id:
         raise HTTPException(status_code=404, detail="Tournament not found.")
