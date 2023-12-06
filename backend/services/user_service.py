@@ -1,11 +1,11 @@
 from database.database_connection import read_query, update_query, insert_query
 from fastapi import HTTPException
 from models.user import User
-from authentication.auth import find_by_email, get_user_or_raise_401
+from authentication.auth import find_by_email
 from models.options import Role, CurrentStatus, EmailType
 from models.requests import LinkRequest, PromoteRequest
 from services import utilities
-from emails_logic.emails import send_email_for_requests
+from services.emails import send_email_for_requests
 from services.utilities import get_user_email_to_send_email_to, get_user_id_from_table
 
 

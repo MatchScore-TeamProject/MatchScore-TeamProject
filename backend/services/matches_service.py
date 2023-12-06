@@ -3,7 +3,7 @@ from models.match import Match
 from models.options import EmailType
 from services.utilities import find_player_id_by_nickname, get_user_email_to_send_email_to, get_user_id_from_table, \
     find_player_nickname_by_id
-from emails_logic.emails import send_email_for_added_to_event, send_email_changed_match_date
+from services.emails import send_email_changed_match_date
 
 
 def all(search: str = None, date: str = None):
