@@ -45,9 +45,6 @@ def get_matches(
 
 @matches_router.put('/update/{id}')
 def update_match_date_by_id(id: int, new_date: str, x_token: str):
-    """
-    Endpoint to update the date of a match by its ID.
-    """
 
     user = get_user_or_raise_401(x_token)
 

@@ -13,14 +13,7 @@ users_router = APIRouter(prefix='/users', tags=['Users'])
 @users_router.post('/register')
 def register(email: EmailStr = Query(),
              password: str = Query()):
-    """ Used for registering new users.
 
-    Args:
-        - LoginData(email, password(str))
-
-    Returns:
-        - Registered user
-    """
 
     user = user_service.create(email, password)
 
@@ -30,14 +23,7 @@ def register(email: EmailStr = Query(),
 @users_router.post('/login')
 def login(email: EmailStr = Query(),
           password: str = Query()):
-    """ Used for logging in.
 
-    Args:
-        - LoginData(email, password(str))
-
-    Returns:
-        - JWT token
-    """
     user = user_service.try_login(email, password)
     if user:
         token = create_token(user)
@@ -47,15 +33,7 @@ def login(email: EmailStr = Query(),
 
 @users_router.get('/{id}')
 def user_info(id: int, x_token: str = Header(default=None)):
-    """ Used for admins to see data information about a user.
 
-    Args:
-        - user.id: int(URL link)
-        - JWT token
-
-    Returns:
-        - user(id, username, user_type)
-    """
 
     if x_token is None:
         raise HTTPException(status_code=401, detail="You must be logged in and be an admin to view accounts.")
@@ -73,17 +51,6 @@ def user_info(id: int, x_token: str = Header(default=None)):
 
 @users_router.post("/link-request")
 def send_link_request(user_email: str, player_profile_nickname: str, x_token: str = Header(default=None)):
-    """ Creates a link request. Only admins can approve or deny requests.
-
-    Args:
-        user_email: str
-        player_profile_nickname:
-        x_token: JTW token
-
-    Returns:
-        A message about the sending of the request.
-
-    """
 
     if get_user_or_raise_401(x_token).user_type == Role.DIRECTOR.value:
         raise HTTPException(status_code=405, detail="Directors cannot be linked to a player profile!")
@@ -137,16 +104,7 @@ def deny_link_request(link_request_id, x_token: str = Header(default=None)):
 
 @users_router.post("/promote-request")
 def send_promotion_request(user_email: str, x_token: str = Header(default=None)):
-    """
-    Creates a promotion to director request.
 
-    Args:
-        user_email: str
-        x_token: JWT token
-
-    Returns:
-        A message about the sending of the promotion request.
-    """
 
     if get_user_or_raise_401(x_token).user_type == Role.DIRECTOR.value:
         raise HTTPException(status_code=405, detail="You are already a director!")
@@ -169,16 +127,7 @@ def send_promotion_request(user_email: str, x_token: str = Header(default=None))
 
 @users_router.put("/promote-request/approve/{promote_request_id}")
 def approve_promotion_request_endpoint(promote_request_id: int, x_token: str = Header(default=None)):
-    """
-    Endpoint to approve a promotion request. Only admins can approve requests.
 
-    Args:
-        promote_request_id: int
-        x_token: JWT token
-
-    Returns:
-        A message indicating the result of the operation.
-    """
     if x_token is None:
         raise HTTPException(status_code=401, detail="You must be logged in to approve a request.")
 
@@ -192,16 +141,6 @@ def approve_promotion_request_endpoint(promote_request_id: int, x_token: str = H
 
 @users_router.put("/promote-request/deny/{promote_request_id}")
 def deny_promotion_request_endpoint(promote_request_id: int, x_token: str = Header(default=None)):
-    """
-    Endpoint to deny a promotion request. Only admins can deny requests.
-
-    Args:
-        promote_request_id: int
-        x_token: JWT token
-
-    Returns:
-        A message indicating the result of the operation.
-    """
 
     if x_token is None:
         raise HTTPException(status_code=401, detail="You must be logged in to deny a request.")
@@ -216,15 +155,6 @@ def deny_promotion_request_endpoint(promote_request_id: int, x_token: str = Head
 
 @users_router.put('/edit/{id}')
 def edit_users_role(new_user: User, id: int, x_token: str = Header(default=None)):
-    """ Used for editing a user's role through user.id. Only admins can edit it.
-
-    Args:
-        - user.id: int(URL link)
-        - JWT token
-
-    Returns:
-        - Edited user
-    """
 
     if x_token is None:
         raise HTTPException(status_code=401, detail="You must be logged in and be an admin to edit users roles.")
@@ -246,15 +176,6 @@ def edit_users_role(new_user: User, id: int, x_token: str = Header(default=None)
 
 @users_router.delete('/delete/{id}')
 def delete_user(id: int, x_token: str = Header(default=None)):
-    """ Used for deleting a user through user.id. Only admins can delete it.
-
-    Args:
-        - user.id: int(URL link)
-        - JWT token
-
-    Returns:
-        - Deleted user
-    """
 
     if x_token is None:
         raise HTTPException(status_code=401, detail="You must be logged in and be an admin to delete a user.")

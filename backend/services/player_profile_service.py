@@ -1,4 +1,3 @@
-
 from fastapi import HTTPException
 import re
 from database.database_connection import read_query, update_query, insert_query
@@ -33,7 +32,7 @@ def edit_player_profile(player_profile_id: int, new_data: PlayerProfile, user_id
 
     current_profile = current_profile_data[0]
 
-    _, _, _, _, linked_user_id = current_profile_data[0]
+    _, _, _, _,  linked_user_id = current_profile_data[0]
 
     if linked_user_id:
         if linked_user_id != user_id:

@@ -3,7 +3,7 @@ from models.match import Match
 from models.options import EmailType
 from services.utilities import find_player_id_by_nickname, get_user_email_to_send_email_to, get_user_id_from_table, \
     find_player_nickname_by_id
-from services.emails import send_email_changed_match_date
+from services.emails import send_email_changed_match_date, send_email_for_added_to_event
 
 
 def all(search: str = None, date: str = None):
@@ -53,9 +53,7 @@ def all(search: str = None, date: str = None):
 
 
 def get_by_id(id: int):
-    data = read_query('''SELECT id, date, format, tournament_id, player_profile_id1, player_profile_id2, score_1, score_2, winner, stage,order_num
-                         FROM matches
-                         WHERE id = ?''', (id,))
+    data = read_query('''SELECT id, date, format, tournament_id, player_profile_id1, player_profile_id2, score_1, score_2, winner, stage,order_num FROM matches WHERE id = ?''', (id,))
 
     return next((Match.from_query_result(*row) for row in data), None)
 
@@ -89,22 +87,9 @@ def sort(result: list[Match], *, attribute="date", reverse=False):
 
 
 def check_date_of_match(id: int):
-    date_of_match = read_query('''SELECT date from matches 
-                                  WHERE id = ?''', (id,))
+    date_of_match = read_query('''SELECT date from matches WHERE id = ?''', (id,))
     return date_of_match[0][0]
 
-
-# def create(date, format, nickname_1, nickname_2):
-#     player_profile_id_1 = find_player_id_by_nickname(nickname_1)
-#     player_profile_id_2 = find_player_id_by_nickname(nickname_2)
-#
-#     generated_id = insert_query('''INSERT INTO matches(date, format, player_profile_id1, player_profile_id2)
-#                                 VALUES(?,?,?,?)''',
-#                                 (date, format, player_profile_id_1, player_profile_id_2))
-#
-#     complete_match = get_by_id(generated_id)
-#
-#     return complete_match
 
 def create(date, format, tournament_id, nickname_1=None, nickname_2=None, stage=None, order_num=None):
     player_profile_id_1 = None
@@ -115,12 +100,21 @@ def create(date, format, tournament_id, nickname_1=None, nickname_2=None, stage=
     if nickname_2:
         player_profile_id_2 = find_player_id_by_nickname(nickname_2)
 
-    generated_id = insert_query('''INSERT INTO matches(date, format, tournament_id, player_profile_id1, player_profile_id2, stage, order_num) 
-                                VALUES(?,?,?,?,?,?,?)''',
+    generated_id = insert_query('''INSERT INTO matches(date, format, tournament_id, player_profile_id1, player_profile_id2, stage, order_num) VALUES(?,?,?,?,?,?,?)''',
                                 (date, format, tournament_id, player_profile_id_1, player_profile_id_2, stage,
                                  order_num))
 
     complete_match = get_by_id(generated_id)
+
+    user_id_1 = get_user_id_from_table(player_profile_id_1, "player_profile")
+    user_email_1 = get_user_email_to_send_email_to(user_id_1)
+
+    user_id_2 = get_user_id_from_table(player_profile_id_2, "player_profile")
+    user_email_2 = get_user_email_to_send_email_to(user_id_2)
+
+    send_email_for_added_to_event(user_email_1, [nickname_1, nickname_2], date, EmailType.ADDED_TO_MATCH.value)
+    send_email_for_added_to_event(user_email_2, [nickname_1, nickname_2], date, EmailType.ADDED_TO_MATCH.value)
+
 
     return complete_match
 
@@ -133,10 +127,7 @@ def update_result_by_nicknames(tournament_id: int, nickname_1: str, score_1: int
     player_profile_id1 = find_player_id_by_nickname(nickname_1)
     player_profile_id2 = find_player_id_by_nickname(nickname_2)
 
-    correct_match = read_query('''SELECT * FROM matches
-                                  WHERE tournament_id = ?
-                                  AND player_profile_id1 = ?
-                                  AND player_profile_id2 = ?''',
+    correct_match = read_query('''SELECT * FROM matches WHERE tournament_id = ? AND player_profile_id1 = ? AND player_profile_id2 = ?''',
                                (tournament_id, player_profile_id1, player_profile_id2))
 
     if not correct_match:
@@ -149,13 +140,7 @@ def update_result_by_nicknames(tournament_id: int, nickname_1: str, score_1: int
     else:
         winner = 'draw'
 
-    update_query('''UPDATE matches SET  
-                    score_1 = ?,
-                    score_2 = ?, 
-                    winner = ?
-                    WHERE tournament_id = ? AND
-                    player_profile_id1 = ? AND
-                    player_profile_id2 = ?''',
+    update_query('''UPDATE matches SET  score_1 = ?, score_2 = ?, winner = ? WHERE tournament_id = ? AND player_profile_id1 = ? AND player_profile_id2 = ?''',
 
                  (
                      score_1,
@@ -167,10 +152,7 @@ def update_result_by_nicknames(tournament_id: int, nickname_1: str, score_1: int
                  ))
 
     max_order_num = read_query(
-        """SELECT order_num FROM matches 
-            WHERE tournament_id = ? 
-            ORDER BY order_num DESC 
-            LIMIT 1""", (tournament_id,))
+        """SELECT order_num FROM matches WHERE tournament_id = ? ORDER BY order_num DESC LIMIT 1""", (tournament_id,))
 
     curr_match = correct_match[0][-1]
     curr_max_order_num = max_order_num[0][0]
@@ -194,13 +176,7 @@ def update_result_by_nicknames(tournament_id: int, nickname_1: str, score_1: int
 
 
 def winner_to_next_stage(tournament_id: int, winner: str):
-    first_available_match = read_query('''
-               SELECT order_num 
-               FROM matches
-               WHERE tournament_id = ?
-               AND (player_profile_id1 is NULL
-               OR player_profile_id2 is NULL)
-                ''', (tournament_id,))
+    first_available_match = read_query('''SELECT order_num FROM matchesWHERE tournament_id = ? AND (player_profile_id1 is NULL OR player_profile_id2 is NULL)''', (tournament_id,))
 
     available_match = first_available_match[0][0]
 
@@ -215,13 +191,7 @@ def winner_to_next_stage(tournament_id: int, winner: str):
     player = find_player_id_by_nickname(winner)
 
     if is_id1_none is None:
-        update_query(f'''
-        UPDATE matches SET player_profile_id1 = ?
-        WHERE tournament_id = ?
-        AND order_num = {available_match}''', (player, tournament_id))
+        update_query(f'''UPDATE matches SET player_profile_id1 = ? WHERE tournament_id = ? AND order_num = {available_match}''', (player, tournament_id))
 
     else:
-        update_query(f'''
-        UPDATE matches SET player_profile_id2 = ?
-        WHERE tournament_id = ?
-        AND order_num = {available_match}''', (player, tournament_id))
+        update_query(f'''UPDATE matches SET player_profile_id2 = ? WHERE tournament_id = ? AND order_num = {available_match}''', (player, tournament_id))

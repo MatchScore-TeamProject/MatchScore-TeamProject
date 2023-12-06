@@ -2,10 +2,14 @@ from datetime import datetime, timedelta
 from itertools import combinations
 from fastapi import HTTPException
 from database.database_connection import read_query, read_query_additional, update_query, insert_query
+from models.options import EmailType
 from models.tournament import Tournament, TournamentFormat, TournamentStatus, TournamentType
 from models.match import MatchResponse, Match
 from typing import List
-from services.utilities import find_player_id_by_nickname, find_player_nickname_by_id
+
+from services.emails import send_email_for_added_to_event
+from services.utilities import find_player_id_by_nickname, find_player_nickname_by_id, get_user_id_from_table, \
+    get_user_email_to_send_email_to
 from services.matches_service import create as create_match
 from services.player_profile_service import find_non_existing_players, create_player_profile
 import random
@@ -19,7 +23,6 @@ def create_knockout(
         prize: str,
         player_nicknames: List[str]
 ):
-
     players_to_create = find_non_existing_players(player_nicknames)
     if players_to_create:
         for player in players_to_create:
@@ -56,6 +59,8 @@ def create_knockout(
     create_all_next_matches(tournament, len(player_nicknames) // 2, player_nicknames)
 
     populate_initial_matches_with_players(tournament, player_nicknames)
+
+    send_emails_for_added_to_tournament(player_nicknames, date, tournament_format, title)
 
     return tournament
 
@@ -194,14 +199,24 @@ def get_all_matches_in_tournament_by_id(tournament_id: int):
         (tournament_id,))
 
     formatted_matches = []
+    previous_date = None
 
     for match in data:
+        match_date = datetime.strptime(match[1], "%Y-%m-%d")
+
+        if previous_date and match_date <= previous_date:
+            match_date = previous_date + timedelta(days=1)
+
+        previous_date = match_date
+
+        match_date_str = match_date.strftime("%Y-%m-%d")
+
         player1_name = find_player_nickname_by_id(match[5])
         player2_name = find_player_nickname_by_id(match[6])
         score_1 = match[3]
         score_2 = match[4]
 
-        match_string = f"{player1_name} {score_1} vs {score_2} {player2_name} | Winner: {match[7]} | Stage: {match[8]}"
+        match_string = f"Date: {match_date_str} | {player1_name} {score_1} vs {score_2} {player2_name} | Winner: {match[7]} | Stage: {match[8]}"
 
         formatted_matches.append(match_string)
 
@@ -239,7 +254,6 @@ def create_league(
         match_format: str,
         prize: str,
         player_nicknames: List[str]):
-
     participants_list = player_nicknames
     pairs = list(combinations(participants_list, 2))
 
@@ -276,7 +290,7 @@ def create_league(
         format = tournament.match_format
         tournament_id = tournament.id
         order_num = None
-#  The following variables are for converting and adding the next match date to the current date!
+        #  The following variables are for converting and adding the next match date to the current date!
         date_str = tournament.date
         date_object = datetime.strptime(date_str, '%Y-%m-%d')
         adding_days_to_date = date_object + timedelta(days=counter_matches)
@@ -294,6 +308,8 @@ def create_league(
         counter_matches += 1
         list_of_matches.append(match)
 
+    send_emails_for_added_to_tournament(player_nicknames, date, tournament_format, title)
+
     return list_of_matches
 
 
@@ -304,6 +320,17 @@ def get_tournament_id_by_name(tournament_name: str):
         raise HTTPException(status_code=404, detail="Tournament not found.")
 
     return tournament_id[0][0]
+
+
+def send_emails_for_added_to_tournament(participants: List[str], date: str, tournament_format: str,
+                                        tournament_name: str):
+    for participant in participants:
+        participant_id = find_player_id_by_nickname(participant)
+        user_id = get_user_id_from_table(participant_id, "player_profile")
+        user_email = get_user_email_to_send_email_to(user_id)
+        send_email_for_added_to_event(user_email, participants, date, EmailType.ADDED_TO_TOURNAMENT.value,
+                                      tournament_format, tournament_name)
+
 
 
 def get_standings_by_league_name(league_name: str):

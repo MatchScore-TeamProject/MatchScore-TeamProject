@@ -4,7 +4,6 @@ from db_password import password
 
 
 def _get_connection() -> Connection:
-    """ Connects to the database through MariaDB."""
 
     return connect(
         user="root",
@@ -16,7 +15,7 @@ def _get_connection() -> Connection:
 
 
 def read_query(sql: str, sql_params=()):
-    """No results = [ ]"""
+
     with _get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(sql, sql_params)
@@ -43,7 +42,6 @@ def update_query(sql: str, sql_params=()) -> bool:
 
 
 def read_query_additional(sql: str, sql_params=()):
-    """No results = None"""
     with _get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(sql, sql_params)

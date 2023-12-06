@@ -19,16 +19,6 @@ class MatchFormat(str, Enum):
     TIME = "time"
     SCORE = "score"
 
-    # def __str__(self):
-    #     return str(self.value).capitalize()
-
-
-# class TournamentFormat(str, Enum):
-#     KNOCKOUT = "knockout"
-#     LEAGUE = "league"
-#
-#     # def __str__(self):
-#     #     return str(self.value).capitalize()
 
 class CurrDateTime(str, Enum):
     CURRENT_DATE = CURR_DATE

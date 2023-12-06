@@ -10,13 +10,12 @@ from services.utilities import get_user_email_to_send_email_to, get_user_id_from
 
 
 def _hash_password(password: str):
-    """ Used to hash a password of a user before saving it in the database."""
+
     from hashlib import sha256
     return sha256(password.encode('utf-8')).hexdigest()
 
 
 def try_login(email: str, password: str) -> User | None:
-    """ Used to hash the login password and compare it with the existing password of the user in the database."""
 
     user = find_by_email(email)
 
@@ -25,7 +24,6 @@ def try_login(email: str, password: str) -> User | None:
 
 
 def create(email: str, password: str) -> User | None:
-    """ Used to save the already hashed password to the database."""
 
     password = _hash_password(password)
 
@@ -37,14 +35,14 @@ def create(email: str, password: str) -> User | None:
 
 
 def delete_user(id: int):
-    """ Used for deleting the user from the database."""
+
 
     insert_query('''DELETE FROM users WHERE id = ?''',
                  (id,))
 
 
 def edit_user_type(old_user: User, new_user: User):
-    """ Used for editing by an admin a role of a user in the database."""
+
 
     edited_user = User(
         id=old_user.id,
@@ -60,40 +58,18 @@ def edit_user_type(old_user: User, new_user: User):
 
 
 def is_admin(user: User):
-    """ Compares the user's role if it's an admin when a JWT token is written in the Header.
-    Returns:
-        - True/False
-    """
+
     return user.user_type == Role.ADMIN
-
-
-#  ............There is no need for this functionality at this time............
-# def all_users():
-#     data = read_query(
-#         '''SELECT id, email, user_type FROM users''')
-#     if data is None:
-#         return None
-#
-#     return (User.from_query_result_no_password(*row) for row in data)
 
 
 def get_by_id(id: int):
     data = read_query(
-        '''SELECT id, email, user_type, player_profile_id
-        FROM users
-        WHERE id = ?''', (id,))
+        '''SELECT id, email, user_type, player_profile_id FROM users WHERE id = ?''', (id,))
     return next((User.from_query_result_no_password(*row) for row in data), None)
 
 
 def find_by_id_admin(id: int) -> User | None:
-    """ Search through users.id the whole information about the account in the data. Only admins can search for them.
 
-    Args:
-        - id: int
-
-    Returns:
-        - all the necessary information about the user (id, username, hashed password, role and etc.)
-    """
 
     data = read_query(
         '''SELECT id, email, user_type FROM users WHERE id = ?''',
@@ -103,26 +79,12 @@ def find_by_id_admin(id: int) -> User | None:
 
 
 def is_director(user: User):
-    """
-    Compares the user's role if it's an admin when a JWT token is written in the Header.
-    Returns:
-        - True/False
-    """
 
     return user.user_type == Role.DIRECTOR
 
 
 def create_link_request(user_id: int, player_profile_id: int):
-    """
 
-    Args:
-        user_id:
-        player_profile_id:
-
-    Returns:
-        - returns the Link
-
-    """
     profile_link_status = read_query(
         '''SELECT users_id FROM player_profile WHERE id = ?''',
         (player_profile_id,)
@@ -139,15 +101,7 @@ def create_link_request(user_id: int, player_profile_id: int):
 
 
 def approve_link_request(link_request_id: int) -> str:
-    """
-    Approve a link request, updating both the player_profile and users tables.
 
-    Args:
-        - link_request_id: int
-
-    Returns:
-        - A message indicating success.
-    """
 
     link_request_data = read_query(
         '''SELECT status, user_id, player_profile_id FROM link_requests WHERE id = ?''',
@@ -182,19 +136,15 @@ def approve_link_request(link_request_id: int) -> str:
 
 
 def deny_link_request(link_request_id: int) -> str:
-    """
-    Deny a link request, updating the status of the request.
 
-    Args:
-        - link_request_id: int
-
-    Returns:
-        - A message indicating failure.
-    """
     link_request_data = read_query(
         "SELECT status FROM link_requests WHERE id = ?",
         (link_request_id,)
     )
+
+    if not link_request_data:
+        raise HTTPException(status_code=404, detail="No such requests exists.")
+
 
     current_status = link_request_data[0][0]
 
@@ -216,15 +166,7 @@ def deny_link_request(link_request_id: int) -> str:
 
 
 def create_promotion_request(user_id: int):
-    """
-    Creates a new promotion request in the database.
 
-    Args:
-        user_id: int
-
-    Returns:
-        A message indicating the creation of the request.
-    """
 
     existing_request = read_query(
         "SELECT id FROM promote_requests WHERE users_id = ? AND status = ?",
@@ -243,15 +185,7 @@ def create_promotion_request(user_id: int):
 
 
 def approve_promote_request(promote_request_id: int) -> str:
-    """
-    Approve a promotion request, updating the status in the promotion_requests table.
 
-    Args:
-        - promote_request_id: int
-
-    Returns:
-        - A message indicating success.
-    """
 
     promote_request_data = read_query(
         "SELECT status, users_id FROM promote_requests WHERE id = ?",
@@ -280,7 +214,6 @@ def approve_promote_request(promote_request_id: int) -> str:
     if player_profile_id_list:
         player_profile_id = player_profile_id_list[0][0]
         update_query("UPDATE player_profile SET users_id = NULL WHERE id=?", (player_profile_id,))
-
     user_email = get_user_email_to_send_email_to(user_id)
 
     send_email_for_requests(receiver=user_email, conformation=CurrentStatus.APPROVED.value,
@@ -290,15 +223,6 @@ def approve_promote_request(promote_request_id: int) -> str:
 
 
 def deny_promote_request(promote_request_id: int) -> str:
-    """
-    Deny a promotion request, updating the status in the promotion_requests table.
-
-    Args:
-        - promote_request_id: int
-
-    Returns:
-        - A message indicating the request was denied.
-    """
 
     promote_request_data = read_query(
         "SELECT status FROM promote_requests WHERE id = ?",

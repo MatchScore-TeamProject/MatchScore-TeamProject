@@ -57,20 +57,7 @@ def edit_player_profile_endpoint(
         sports_club: str = Query(default=None, description="New sports club"),
         x_token: str = Header(default=None)
 ):
-    """
-    Endpoint to edit a player profile using query parameters.
 
-    Args:
-        player_profile_id: int - ID of the player profile to edit
-        nickname: str - New nickname (optional)
-        full_name: str - New full name (optional)
-        country: str - New country (optional)
-        sports_club: str - New sports club (optional)
-        x_token: str - JWT token for authentication
-
-    Returns:
-        A message indicating the result of the operation.
-    """
 
     if x_token is None:
         raise HTTPException(status_code=401, detail="Authentication token is missing.")

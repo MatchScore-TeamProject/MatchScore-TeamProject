@@ -7,11 +7,6 @@ _JWT_SECRET = 'a2b1f0c7e8d94356'
 
 
 def get_user_or_raise_401(token: str) -> User:
-    ''' Authenticates the given token in Header and finds the whole information of the user through email:
-
-    Args:
-        - token (str): text with indents
-    '''
 
     try:
         payload = is_authenticated(token)
@@ -21,14 +16,7 @@ def get_user_or_raise_401(token: str) -> User:
 
 
 def compare_token(token: str) -> User:
-    ''' Drags the id from the token so it can be compared.
 
-    Args:
-        - token (str): text with indents
-
-    Returns:
-        - id of the token
-    '''
 
     try:
         payload = is_authenticated(token)
@@ -39,14 +27,6 @@ def compare_token(token: str) -> User:
 
 
 def find_by_email(email: str) -> User | None:
-    ''' Drags the id from the token so it can be compared.
-
-    Args:
-        - token (str): text with indents
-
-    Returns:
-        - id of the token
-    '''
 
     data = read_query(
         'SELECT id, email, password, user_type FROM users WHERE email = ?',
@@ -56,14 +36,7 @@ def find_by_email(email: str) -> User | None:
 
 
 def find_by_id(id: int) -> User | None:
-    ''' Search through users.id the whole information about the account in the data.
 
-    Args:
-        - id: int
-
-    Returns:
-        - all the necessary information about the user (id, username, hashed password, role and etc.)
-    '''
 
     data = read_query(
         'SELECT id, email, password, user_type FROM users WHERE id = ?',
@@ -73,14 +46,6 @@ def find_by_id(id: int) -> User | None:
 
 
 def create_token(user: User) -> str:
-    ''' Creates JWT token when user uses login request.
-
-    Args:
-        - user: id(int), username(str)
-
-    Returns:
-        - encoded JWT token
-    '''
 
     payload = {
         "id": user.id,
@@ -91,13 +56,6 @@ def create_token(user: User) -> str:
 
 
 def is_authenticated(token: str) -> bool:
-    ''' Decodes JWT token.
 
-    Args:
-        - encoded JWT token
-
-    Returns:
-        - user: id(int), email(str)
-    '''
 
     return jwt.decode(token, _JWT_SECRET, algorithms=["HS256"])
