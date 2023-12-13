@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from models.match import Match
 from enum import Enum
-from models.player_profile import PlayerProfile
+
 
 class Tournament(BaseModel):
     id: int | None = None
@@ -26,6 +26,7 @@ class Tournament(BaseModel):
             prize=prize,
             player_nicknames=player_nicknames,
         )
+
 
 class TournamentStatus(Enum):
     OPEN = "open"

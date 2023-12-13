@@ -61,6 +61,7 @@ def approved_scenario_pr(name_of_receiver: str):
 """
     return body
 
+
 def denied_scenario_pr(name_of_receiver: str):
     body = f"""Dear {name_of_receiver},
 

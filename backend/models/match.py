@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from datetime import date
 from models.options import MatchFormat
-from services.utilities import find_player_nickname_by_id
+
 
 class Match(BaseModel):
     id: int | None = None
@@ -33,6 +33,7 @@ class Match(BaseModel):
             stage=stage,
             order_num=order_num
         )
+
 
 class MatchResponse(BaseModel):
     nickname_1: str | None = None  

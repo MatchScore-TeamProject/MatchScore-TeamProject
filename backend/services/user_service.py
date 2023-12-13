@@ -36,13 +36,11 @@ def create(email: str, password: str) -> User | None:
 
 def delete_user(id: int):
 
-
     insert_query('''DELETE FROM users WHERE id = ?''',
                  (id,))
 
 
 def edit_user_type(old_user: User, new_user: User):
-
 
     edited_user = User(
         id=old_user.id,
@@ -69,7 +67,6 @@ def get_by_id(id: int):
 
 
 def find_by_id_admin(id: int) -> User | None:
-
 
     data = read_query(
         '''SELECT id, email, user_type FROM users WHERE id = ?''',
@@ -102,7 +99,6 @@ def create_link_request(user_id: int, player_profile_id: int):
 
 def approve_link_request(link_request_id: int) -> str:
 
-
     link_request_data = read_query(
         '''SELECT status, user_id, player_profile_id FROM link_requests WHERE id = ?''',
         (link_request_id,)
@@ -112,7 +108,6 @@ def approve_link_request(link_request_id: int) -> str:
         raise HTTPException(status_code=404, detail=f"No link request with ID: {link_request_id} exists.")
 
     current_status, user_id, player_profile_id = link_request_data[0]
-
 
     if current_status == CurrentStatus.DENIED.value:
         raise HTTPException(status_code=404, detail="Status cannot be changed from approved to denied and vice versa.")
@@ -145,7 +140,6 @@ def deny_link_request(link_request_id: int) -> str:
     if not link_request_data:
         raise HTTPException(status_code=404, detail="No such requests exists.")
 
-
     current_status = link_request_data[0][0]
 
     if current_status == CurrentStatus.APPROVED.value:
@@ -167,7 +161,6 @@ def deny_link_request(link_request_id: int) -> str:
 
 def create_promotion_request(user_id: int):
 
-
     existing_request = read_query(
         "SELECT id FROM promote_requests WHERE users_id = ? AND status = ?",
         (user_id, CurrentStatus.PENDING.value)
@@ -185,7 +178,6 @@ def create_promotion_request(user_id: int):
 
 
 def approve_promote_request(promote_request_id: int) -> str:
-
 
     promote_request_data = read_query(
         "SELECT status, users_id FROM promote_requests WHERE id = ?",

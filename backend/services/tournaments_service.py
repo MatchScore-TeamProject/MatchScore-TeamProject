@@ -226,19 +226,6 @@ def get_all_matches_in_tournament_by_id(tournament_id: int):
 """It is about to be used in league functionality"""
 
 
-# def find_stage_from_players(players_left: list):
-#     if len(players_left)== 2:
-#         return "Final"
-#     if len(players_left)== 4:
-#         return "Semi Final"
-#     if len(players_left)== 8:
-#         return "Quarter Final"
-#     if len(players_left)== 16:
-#         return "Round of Sixteen"
-#     if len(players_left)== 32:
-#         return "Round of Thirty-Two"
-
-
 def delete_tournament(tournament_id: int):
     insert_query("DELETE FROM tournaments_has_player_profile WHERE tournaments_id = ?", (tournament_id,))
 
@@ -330,7 +317,6 @@ def send_emails_for_added_to_tournament(participants: List[str], date: str, tour
         user_email = get_user_email_to_send_email_to(user_id)
         send_email_for_added_to_event(user_email, participants, date, EmailType.ADDED_TO_TOURNAMENT.value,
                                       tournament_format, tournament_name)
-
 
 
 def get_standings_by_league_name(league_name: str):
